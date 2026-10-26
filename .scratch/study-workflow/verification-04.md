@@ -1,6 +1,6 @@
 # Ticket 04: Evidence and Limitations
 
-Baseline: ticket 03 commit `345daa1`. Scope: `feynman`, categorized explanation feedback, contextual fundamental classification, and consent-based upgrade to state 1.3.0.
+Baseline reviewed: ticket 03 commit `345daa1`, now `92381fc` with an identical tree after commit-message wrapping. Scope: `feynman`, categorized explanation feedback, contextual fundamental classification, and consent-based upgrade to state 1.3.0.
 
 ## Observed structural evidence
 

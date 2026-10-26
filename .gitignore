@@ -1,2 +1,22 @@
 # Default private learning workspace (sources, outputs, and progress).
 /study/
+
+# Local agent tooling is not part of the public study bundle.
+/.agents/skills/*
+!/.agents/skills/init-study/
+!/.agents/skills/to-map/
+!/.agents/skills/to-drill/
+!/.agents/skills/to-question/
+!/.agents/skills/socrate/
+!/.agents/skills/feynman/
+!/.agents/skills/to-docs/
+!/.agents/skills/to-review/
+!/.agents/skills/_study/
+/skills-lock.json
+
+# Credentials, local caches, and generated distribution files.
+.env
+.env.*
+__pycache__/
+*.pyc
+/dist/
