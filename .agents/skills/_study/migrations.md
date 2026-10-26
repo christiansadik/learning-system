@@ -31,3 +31,10 @@ For each transition, follow the workspace save protocol: inspect legacy structur
 - Existing concepts retain null fundamental status/rationale until actually classified in context. Do not retroactively reinterpret older turns or add categorized feedback to them.
 - Preserve all active attempts/sessions, prompts, turns, observations, maps, and quiz evidence. Only a checkpoint blocked solely at newly available `feynman`, with no active work, may become an activation offer.
 - New explanation sessions use the existing session shape with activity `feynman`; their actual observations require the documented feedback category. No record is fabricated during migration.
+
+## 1.3.0 → 1.4.0
+
+- Set `schema_version` to `1.4.0`, initialize `exports: []`, and add `active_export_id: null` to every checkpoint.
+- Make installed `to-docs` pending only if previously unavailable, clearing its unavailable reason. Do not invent export files or artifact registrations.
+- Preserve active practice/dialogues, all source scope, classification history, outputs, and quiz evidence. Only a checkpoint blocked solely at newly available `to-docs`, without active work, may become an activation offer.
+- Existing artifacts retain their single-topic scope and fields. Multi-topic scope is permitted only for newly created paired export artifacts. Review enrollment and due dates remain unset.

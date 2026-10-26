@@ -12,7 +12,7 @@ Observations are append-only records of `gap` or `insight` with a concept ID, de
 
 ## Checkpoints and active-work guard
 
-Only one active activity per specific topic is supported: an unfinished practice attempt or a learning session, never both. The checkpoint owns next action/status; an active session's `pending_prompt` owns the exact dialogue prompt, so checkpoint `pending_prompt` is null for an active session. On resume, use the session's prompt and checkpoint's next action. Non-session checkpoints retain their own prompt as before. Do not maintain two editable copies of a dialogue prompt.
+Follow the workspace active-work guard, including export reservations spanning this topic. Only one active activity per specific topic is supported; a session cannot coexist with practice or export work on that topic. The checkpoint owns next action/status; an active session's `pending_prompt` owns the exact dialogue prompt, so checkpoint `pending_prompt` is null for an active session. On resume, use the session's prompt and checkpoint's next action. Non-session checkpoints retain their own prompt as before. Do not maintain two editable copies of a dialogue prompt.
 
 Before starting any different activity on the same topic, preserve its active pointer and prompt and ask the learner to resume/finish or explicitly abandon it first. Switching to a different topic preserves the old topic's active work unchanged. Merely displaying an already completed artifact is allowed without altering either checkpoint.
 

@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Shared Study State 1.3.0 with read-only legacy compatibility",
+  "title": "Shared Study State 1.4.0 with read-only legacy compatibility",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "revision", "created_at", "updated_at", "main_topic", "current", "topics", "sources", "artifacts", "history", "questions", "attempts", "learning_records"],
   "properties": {
-    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0"] },
+    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"] },
     "revision": { "type": "integer", "minimum": 1 },
     "created_at": { "$ref": "#/$defs/instant" },
     "updated_at": { "$ref": "#/$defs/instant" },
@@ -36,7 +36,8 @@
     "history": { "type": "array", "items": { "$ref": "#/$defs/event" } },
     "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
     "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } },
-    "learning_records": { "type": "array", "items": { "$ref": "#/$defs/session" } }
+    "learning_records": { "type": "array", "items": { "$ref": "#/$defs/session" } },
+    "exports": { "type": "array", "items": { "$ref": "#/$defs/export" } }
   },
   "allOf": [
     {
@@ -98,6 +99,26 @@
           } } }
         }
       }
+    },
+    {
+      "if": { "properties": { "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0"] } } },
+      "then": {
+        "not": { "required": ["exports"] },
+        "properties": {
+          "topics": { "items": { "properties": {
+            "steps": { "properties": { "to-docs": { "$ref": "#/$defs/unavailableStep" } } },
+            "checkpoint": {
+              "not": { "required": ["active_export_id"] },
+              "properties": { "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session"] } }
+            }
+          } } },
+          "artifacts": { "items": { "properties": { "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary"] }, "topic_ids": { "maxItems": 1 } } } }
+        }
+      },
+      "else": {
+        "required": ["exports"],
+        "properties": { "topics": { "items": { "properties": { "checkpoint": { "required": ["active_export_id"] } } } } }
+      }
     }
   ],
   "$defs": {
@@ -112,6 +133,7 @@
     "attemptId": { "type": "string", "pattern": "^p[0-9]{3,}$" },
     "sessionId": { "type": "string", "pattern": "^l[0-9]{3,}$" },
     "turnId": { "type": "string", "pattern": "^u[0-9]{3,}$" },
+    "exportId": { "type": "string", "pattern": "^x[0-9]{3,}$" },
     "questionIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/questionId" } },
     "sourceIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sourceId" } },
     "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:).+$" },
@@ -128,16 +150,21 @@
         "pending_prompt": { "$ref": "#/$defs/nullableText" },
         "active_attempt_id": { "anyOf": [{ "$ref": "#/$defs/attemptId" }, { "type": "null" }] },
         "active_session_id": { "anyOf": [{ "$ref": "#/$defs/sessionId" }, { "type": "null" }] },
-        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session"] }
+        "active_export_id": { "anyOf": [{ "$ref": "#/$defs/exportId" }, { "type": "null" }] },
+        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session", "generate_documents"] }
       },
       "allOf": [
         {
           "if": { "required": ["active_session_id"], "properties": { "active_session_id": { "type": "string" } } },
-          "then": { "properties": { "pending_prompt": { "type": "null" }, "active_attempt_id": { "type": "null" } } },
+          "then": { "properties": { "pending_prompt": { "type": "null" }, "active_attempt_id": { "type": "null" }, "active_export_id": { "type": "null" } } },
           "else": {
             "if": { "properties": { "status": { "enum": ["awaiting_input", "blocked"] } } },
             "then": { "properties": { "pending_prompt": { "$ref": "#/$defs/text" } } }
           }
+        },
+        {
+          "if": { "required": ["active_export_id"], "properties": { "active_export_id": { "type": "string" } } },
+          "then": { "properties": { "active_attempt_id": { "type": "null" }, "active_session_id": { "type": "null" }, "activity": { "const": "to-docs" } } }
         }
       ]
     },
@@ -188,7 +215,7 @@
             "to-question": { "$ref": "#/$defs/step" },
             "socrate": { "$ref": "#/$defs/step" },
             "feynman": { "$ref": "#/$defs/step" },
-            "to-docs": { "$ref": "#/$defs/unavailableStep" },
+            "to-docs": { "$ref": "#/$defs/step" },
             "to-review": { "$ref": "#/$defs/unavailableStep" }
           }
         },
@@ -243,16 +270,24 @@
       "required": ["id", "kind", "topic_ids", "source_ids", "path", "created_at"],
       "properties": {
         "id": { "$ref": "#/$defs/artifactId" },
-        "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary"] },
-        "topic_ids": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "$ref": "#/$defs/topicId" } },
+        "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary", "concept_map", "explanation"] },
+        "topic_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/topicId" } },
         "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
         "path": { "$ref": "#/$defs/relativePath" },
         "created_at": { "$ref": "#/$defs/instant" },
         "question_ids": { "$ref": "#/$defs/questionIds" }
       },
-      "if": { "properties": { "kind": { "const": "practice_questions" } } },
-      "then": { "required": ["question_ids"], "properties": { "question_ids": { "minItems": 1 } } },
-      "else": { "properties": { "question_ids": { "maxItems": 0 } } }
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "practice_questions" } } },
+          "then": { "required": ["question_ids"], "properties": { "question_ids": { "minItems": 1 } } },
+          "else": { "properties": { "question_ids": { "maxItems": 0 } } }
+        },
+        {
+          "if": { "properties": { "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary"] } } },
+          "then": { "properties": { "topic_ids": { "maxItems": 1 } } }
+        }
+      ]
     },
     "evidence": {
       "type": "object", "additionalProperties": false,
@@ -433,6 +468,41 @@
               "turns": { "contains": { "properties": { "role": { "const": "learner" } } } }
             }
           }
+        },
+        {
+          "if": { "properties": { "status": { "const": "abandoned" } } },
+          "then": { "properties": { "end_reason": { "$ref": "#/$defs/text" } } }
+        }
+      ]
+    },
+    "export": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "topic_ids", "owner_topic_id", "source_ids", "scope_note", "mode", "status", "map_path", "explanation_path", "map_artifact_id", "explanation_artifact_id", "started_at", "ended_at", "end_reason"],
+      "properties": {
+        "id": { "$ref": "#/$defs/exportId" },
+        "topic_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/topicId" } },
+        "owner_topic_id": { "$ref": "#/$defs/topicId" },
+        "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
+        "scope_note": { "$ref": "#/$defs/nullableText" },
+        "mode": { "enum": ["orchestrated", "standalone"] },
+        "status": { "enum": ["in_progress", "completed", "abandoned"] },
+        "map_path": { "$ref": "#/$defs/relativePath" },
+        "explanation_path": { "$ref": "#/$defs/relativePath" },
+        "map_artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] },
+        "explanation_artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] },
+        "started_at": { "$ref": "#/$defs/instant" },
+        "ended_at": { "$ref": "#/$defs/nullableInstant" },
+        "end_reason": { "$ref": "#/$defs/nullableText" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "in_progress" } } },
+          "then": { "properties": { "ended_at": { "type": "null" }, "end_reason": { "type": "null" } } },
+          "else": { "properties": { "ended_at": { "$ref": "#/$defs/instant" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "completed" } } },
+          "then": { "properties": { "map_artifact_id": { "$ref": "#/$defs/artifactId" }, "explanation_artifact_id": { "$ref": "#/$defs/artifactId" }, "end_reason": { "type": "null" } } }
         },
         {
           "if": { "properties": { "status": { "const": "abandoned" } } },

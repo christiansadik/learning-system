@@ -1,6 +1,6 @@
 # Shared Study Workspace Contract
 
-Contract version: **1.3.0**. Before interpreting or writing state, read [state.schema.json](state.schema.json). Read [orientation-format.md](orientation-format.md) for mapping, [practice.md](practice.md) for retrieval practice, [dialogue.md](dialogue.md) for learning dialogues, and [explanation.md](explanation.md) for explanation feedback and fundamental classification.
+Contract version: **1.4.0**. Before interpreting or writing state, read [state.schema.json](state.schema.json). Read [orientation-format.md](orientation-format.md) for mapping, [practice.md](practice.md) for retrieval practice, [dialogue.md](dialogue.md) for learning dialogues, [explanation.md](explanation.md) for explanation feedback/classification, and [exports.md](exports.md) for paired document exports.
 
 These are shared references, not a discoverable skill. Install `_study` beside each installed study skill directory; individual methods need this reference bundle but not the orchestrator. Agent-specific activation and installation mappings belong outside this contract. The schema and this document are authoritative for persisted data and behavior respectively.
 
@@ -19,6 +19,10 @@ Use the learner's explicit location; otherwise use `study/` under the working di
       <specific-topic-id>/
         orientation-0001.md
         practice-0001.md
+      exports/
+        <export-id>/
+          concept-map.md
+          explanation.md
     progress/
       snapshots/
         state-r000001.json
@@ -46,10 +50,10 @@ Inspect the existing topic list and source records before adding records. Reuse 
 
 Initialize state conforming to the schema using these values:
 
-- `schema_version`: `1.3.0`; `revision`: `1`; timestamps: actual UTC ISO 8601 instants.
+- `schema_version`: `1.4.0`; `revision`: `1`; timestamps: actual UTC ISO 8601 instants.
 - `main_topic`: stable ID, title, objective, learner language.
 - `current`: `topic_id: null` and `pending_prompt` containing the exact request for the first specific topic and material. When a topic is selected, set `topic_id` and clear this intake-only prompt; the selected topic's checkpoint is then the sole activity authority.
-- `topics`, `sources`, `artifacts`, `history`, `questions`, `attempts`, and `learning_records`: empty arrays before creating the corresponding real records.
+- `topics`, `sources`, `artifacts`, `history`, `questions`, `attempts`, `learning_records`, and `exports`: empty arrays before creating the corresponding real records.
 
 For a new specific topic:
 
@@ -57,7 +61,7 @@ For a new specific topic:
 - Set its cycle to `in_progress` with `completed_at: null`.
 - Initialize installed methods listed as available below to `pending` and other named steps to `unavailable`, each with a null artifact, null completion time, and an explanatory reason where appropriate. An independently installed method does not imply its sibling skills are installed: mark missing methods unavailable with that reason.
 - Initialize review to `eligible: false`, `enrolled_at: null`, `next_due_at: null`, `history: []`.
-- Set `current.topic_id` to the selected topic and `current.pending_prompt` to null. Initialize the topic's `checkpoint` with current activity, actual interaction mode (`orchestrated` or `standalone`), status, exact pending prompt if any, an explicit next action, `active_attempt_id: null`, and `active_session_id: null`.
+- Set `current.topic_id` to the selected topic and `current.pending_prompt` to null. Initialize the topic's `checkpoint` with current activity, actual interaction mode (`orchestrated` or `standalone`), status, exact pending prompt if any, an explicit next action, `active_attempt_id: null`, `active_session_id: null`, and `active_export_id: null`.
 
 Read and preserve unknown user content in original files. Unsupported schema versions, malformed JSON, unresolved IDs, or incompatible fields are blockers: preserve the state and ask for recovery or a compatible reader. Supported legacy versions are read-only. Before updating older state, read [migrations.md](migrations.md) and obtain consent for its explicit upgrade chain; all new writes use the current contract version.
 
@@ -79,7 +83,7 @@ Each concept has a stable ID, label, source IDs, and optional fundamental classi
 
 `inventory_complete` means the documented study scope's concept inventory was deliberately checked for completeness; a ten-concept orientation is not sufficient evidence. Leave it false in this release. Topic correctness and coverage percentages are not produced by orientation.
 
-The schema defines `questions` and `attempts` for immediate practice; read the practice contract before populating them or derived `assessed_question_ids`. Learning dialogues use `learning_records` through the dialogue contract and do not populate quiz metrics. Topic review `history` remains reserved empty. Fundamental status starts null; follow the explanation contract before classifying or revising it. Creating a map never populates practice or assessment records.
+The schema defines `questions` and `attempts` for immediate practice; read the practice contract before populating them or derived `assessed_question_ids`. Learning dialogues use `learning_records` and paired exports use `exports`; neither populates quiz metrics. Topic review `history` remains reserved empty. Fundamental status starts null; follow the explanation contract before classifying or revising it. Creating a map never populates practice or assessment records.
 
 ## Lifecycle and resumption
 
@@ -101,15 +105,15 @@ On resume, read the selected main-topic state and follow `current.topic_id` to t
 
 On a switch, preserve the old topic's complete checkpoint unchanged and select the target topic's existing checkpoint, or initialize one for a new topic. Do not reconstruct activity from narrative history or copy one topic's pending prompt onto another. Changing interaction mode updates only the selected topic's checkpoint and records the change in history.
 
-When a completed map is already registered and neither revision nor changed source scope is requested, show that artifact and the saved next action without reactivating mapping or changing completion. Active practice or dialogue takes precedence: resume its checkpoint rather than discarding it. Source changes require an explicit revised scope before regeneration. If a revision fails, preserve the prior completed artifact and record the interrupted revision in the checkpoint; do not claim that revision completed.
+When a completed map is already registered and neither revision nor changed source scope is requested, show that artifact and the saved next action without reactivating mapping or changing completion. Active practice, dialogue, or export takes precedence: resume its checkpoint rather than discarding it. Source changes require an explicit revised scope before regeneration. If a revision fails, preserve the prior completed artifact and record the interrupted revision in the checkpoint; do not claim that revision completed.
 
-Before changing activities or source scope within a topic, preserve active practice or dialogue and require the learner to finish it or explicitly abandon it through its owning method first. Do not clear its pointer or prompt to make room for another skill. This guard applies to mapping, practice, and every dialogue, including standalone use.
+Before changing activities or source scope within a topic, preserve active practice, dialogue, or export and require the learner to finish it or explicitly abandon it through its owning method first. Inspect in-progress exports covering that topic even when their pointer belongs to a different owner topic. Do not clear pointers/prompts to make room for another skill. This guard applies to every method, including standalone use. For a reserved multi-topic export, resume through its owner or explicitly abandon it before conflicting work on any covered topic; unrelated topics remain usable.
 
 All non-practice artifacts record `question_ids: []`; practice artifacts record their actual presented question IDs.
 
 ### Availability and continuation
 
-Available methods: `to-map`, `to-drill`, `to-question`, `socrate`, `feynman`. `to-docs` and `to-review` remain unavailable in this release. Missing installed siblings are unavailable even if implemented in the distribution; unrelated same-named skills are not substitutes.
+Available methods: `to-map`, `to-drill`, `to-question`, `socrate`, `feynman`, `to-docs`. `to-review` remains unavailable in this release. Missing installed siblings are unavailable even if implemented in the distribution; unrelated same-named skills are not substitutes.
 
 The intended order is the seven-step order above. After a completed or explicitly skipped method, preserve its result and offer the next method only: set checkpoint activity to that method, clear inactive pointers, and use `awaiting_input`/`activate_method` with an exact invitation when it is available, otherwise `blocked`/`await_next_method` explaining the missing method. The existing `activate_to_drill` action remains valid for saved orientation offers. Wait for the learner before native activation; denied activation is a saved blocker. Never translate a declined invitation into a skipped step or auto-run the remaining sequence.
 
@@ -126,6 +130,6 @@ Use the host's permitted filesystem tools. No executable runtime is required by 
 5. Check JSON structure against the bundled schema and the semantic invariants below using available tooling or a careful structural read; be explicit if no machine validator is available. Replace state using an atomic write when supported. Otherwise retain the snapshot, write and immediately reread state, and report a failed or incomplete save rather than promising durability.
 6. Before yielding, save the selected topic's next action in its checkpoint. Save the exact pending prompt in the active session record for dialogue, otherwise in the checkpoint; when no topic exists, save the intake prompt instead. Report the workspace location. If saving fails, preserve valid prior state and disclose which updates were not saved.
 
-Semantic invariants: IDs are unique within their recorded scope; references resolve; each topic's source IDs refer to registered sources; concept source IDs belong to the topic; current topic and artifact scope match the selected activity; referenced artifact paths exist; source and artifact relative paths are confined to the workspace. Every `completed` step has a real completion timestamp and a matching registered artifact. Skipped and blocked steps have reasons. Apply practice/dialogue/explanation invariants when relevant. In this release, cycle completion time and all review enrollment/due fields stay null and the two later methods stay unavailable.
+Semantic invariants: IDs are unique within their recorded scope; references resolve; each topic's source IDs refer to registered sources; concept source IDs belong to the topic; current topic and artifact scope match the selected activity; referenced artifact paths exist; source and artifact relative paths are confined to the workspace. Every `completed` step has a real completion timestamp and a matching registered artifact. Skipped and blocked steps have reasons. Apply practice/dialogue/explanation/export invariants when relevant. In this release, cycle completion time and all review enrollment/due fields stay null and `to-review` stays unavailable.
 
 If state is damaged, offer an identified valid snapshot for explicit recovery, preserving the damaged file. If permissions or schema prevent safe updates, pause. Never silently replace state with an older snapshot or initialize a fresh state over it.
