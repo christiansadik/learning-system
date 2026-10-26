@@ -1,6 +1,6 @@
 # Immediate Practice Contract
 
-Applies to shared state **1.1.0**. Read [the workspace contract](workspace.md) and [state.schema.json](state.schema.json) before changing state. This is immediate, single-topic practice, not cumulative spaced review.
+Introduced in shared state **1.1.0**; use the current version from [the workspace contract](workspace.md) and read [state.schema.json](state.schema.json) before changing state. This is immediate, single-topic practice, not cumulative spaced review.
 
 ## Questions and provenance
 
@@ -49,7 +49,7 @@ For each unaided evaluated response in a completed attempt, add its question ID 
 
 On resume, read the active attempt and restore the same question order and the exact pending prompt. If all responses are answered but not evaluated, resume correction rather than asking the questions again. If an attempt is completed but the checkpoint was not advanced, finish the bookkeeping idempotently; do not duplicate attempts or assessment references. Conflicting checkpoint/attempt references are blockers requiring explicit reconciliation, not a reason to reset progress.
 
-When practice is completed, declined, or explicitly abandoned, clear the active attempt pointer and use `activity: to-question`, `status: blocked`, `next_action: await_next_method`, with a prompt explaining that the next method is unavailable. Keep all later methods unavailable, the overall cycle in progress, and review enrollment and due dates null. Starting another practice set is always an explicit learner choice.
+When practice is completed or declined, clear the inactive attempt pointer and follow the workspace continuation rule. Explicit abandonment ends only the attempt: preserve any already completed deck-generation step, and ask whether to restart or select another activity rather than advancing automatically. Keep the overall cycle in progress and review enrollment/due dates null. Starting another practice set is always an explicit learner choice.
 
 ## Semantic checks beyond JSON Schema
 

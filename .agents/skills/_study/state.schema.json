@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Shared Study State 1.1.0 with read-only 1.0.0 compatibility",
+  "title": "Shared Study State 1.2.0 with read-only legacy compatibility",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "revision", "created_at", "updated_at", "main_topic", "current", "topics", "sources", "artifacts", "history", "questions", "attempts", "learning_records"],
   "properties": {
-    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
+    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0"] },
     "revision": { "type": "integer", "minimum": 1 },
     "created_at": { "$ref": "#/$defs/instant" },
     "updated_at": { "$ref": "#/$defs/instant" },
@@ -36,7 +36,7 @@
     "history": { "type": "array", "items": { "$ref": "#/$defs/event" } },
     "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
     "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } },
-    "learning_records": { "$ref": "#/$defs/reserved" }
+    "learning_records": { "type": "array", "items": { "$ref": "#/$defs/session" } }
   },
   "allOf": [
     {
@@ -66,6 +66,23 @@
           "artifacts": { "items": { "required": ["question_ids"] } }
         }
       }
+    },
+    {
+      "if": { "properties": { "schema_version": { "enum": ["1.0.0", "1.1.0"] } } },
+      "then": {
+        "properties": {
+          "learning_records": { "$ref": "#/$defs/reserved" },
+          "topics": { "items": { "properties": {
+            "steps": { "properties": { "to-question": { "$ref": "#/$defs/unavailableStep" }, "socrate": { "$ref": "#/$defs/unavailableStep" } } },
+            "checkpoint": {
+              "not": { "required": ["active_session_id"] },
+              "properties": { "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state"] } }
+            }
+          } } },
+          "artifacts": { "items": { "properties": { "kind": { "enum": ["orientation_map", "practice_questions"] } } } }
+        }
+      },
+      "else": { "properties": { "topics": { "items": { "properties": { "checkpoint": { "required": ["active_session_id"] } } } } } }
     }
   ],
   "$defs": {
@@ -78,6 +95,8 @@
     "artifactId": { "type": "string", "pattern": "^a[0-9]{3,}$" },
     "questionId": { "type": "string", "pattern": "^q[0-9]{3,}$" },
     "attemptId": { "type": "string", "pattern": "^p[0-9]{3,}$" },
+    "sessionId": { "type": "string", "pattern": "^l[0-9]{3,}$" },
+    "turnId": { "type": "string", "pattern": "^u[0-9]{3,}$" },
     "questionIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/questionId" } },
     "sourceIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sourceId" } },
     "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:).+$" },
@@ -93,10 +112,19 @@
         "status": { "$ref": "#/$defs/status" },
         "pending_prompt": { "$ref": "#/$defs/nullableText" },
         "active_attempt_id": { "anyOf": [{ "$ref": "#/$defs/attemptId" }, { "type": "null" }] },
-        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state"] }
+        "active_session_id": { "anyOf": [{ "$ref": "#/$defs/sessionId" }, { "type": "null" }] },
+        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session"] }
       },
-      "if": { "properties": { "status": { "enum": ["awaiting_input", "blocked"] } } },
-      "then": { "properties": { "pending_prompt": { "$ref": "#/$defs/text" } } }
+      "allOf": [
+        {
+          "if": { "required": ["active_session_id"], "properties": { "active_session_id": { "type": "string" } } },
+          "then": { "properties": { "pending_prompt": { "type": "null" }, "active_attempt_id": { "type": "null" } } },
+          "else": {
+            "if": { "properties": { "status": { "enum": ["awaiting_input", "blocked"] } } },
+            "then": { "properties": { "pending_prompt": { "$ref": "#/$defs/text" } } }
+          }
+        }
+      ]
     },
     "step": {
       "type": "object", "additionalProperties": false,
@@ -142,8 +170,8 @@
           "properties": {
             "to-map": { "$ref": "#/$defs/step" },
             "to-drill": { "$ref": "#/$defs/step" },
-            "to-question": { "$ref": "#/$defs/unavailableStep" },
-            "socrate": { "$ref": "#/$defs/unavailableStep" },
+            "to-question": { "$ref": "#/$defs/step" },
+            "socrate": { "$ref": "#/$defs/step" },
             "feynman": { "$ref": "#/$defs/unavailableStep" },
             "to-docs": { "$ref": "#/$defs/unavailableStep" },
             "to-review": { "$ref": "#/$defs/unavailableStep" }
@@ -197,16 +225,16 @@
       "required": ["id", "kind", "topic_ids", "source_ids", "path", "created_at"],
       "properties": {
         "id": { "$ref": "#/$defs/artifactId" },
-        "kind": { "enum": ["orientation_map", "practice_questions"] },
+        "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary"] },
         "topic_ids": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "$ref": "#/$defs/topicId" } },
         "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
         "path": { "$ref": "#/$defs/relativePath" },
         "created_at": { "$ref": "#/$defs/instant" },
         "question_ids": { "$ref": "#/$defs/questionIds" }
       },
-      "if": { "properties": { "kind": { "const": "orientation_map" } } },
-      "then": { "properties": { "question_ids": { "maxItems": 0 } } },
-      "else": { "required": ["question_ids"], "properties": { "question_ids": { "minItems": 1 } } }
+      "if": { "properties": { "kind": { "const": "practice_questions" } } },
+      "then": { "required": ["question_ids"], "properties": { "question_ids": { "minItems": 1 } } },
+      "else": { "properties": { "question_ids": { "maxItems": 0 } } }
     },
     "evidence": {
       "type": "object", "additionalProperties": false,
@@ -314,6 +342,74 @@
         {
           "if": { "properties": { "status": { "const": "completed" } } },
           "then": { "properties": { "end_reason": { "type": "null" }, "responses": { "items": { "properties": { "evaluated_at": { "$ref": "#/$defs/instant" } } } } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "abandoned" } } },
+          "then": { "properties": { "end_reason": { "$ref": "#/$defs/text" } } }
+        }
+      ]
+    },
+    "turn": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "role", "text", "recorded_at", "concept_ids", "evidence", "assessment", "responds_to_turn_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/turnId" },
+        "role": { "enum": ["learner", "tutor"] },
+        "text": { "$ref": "#/$defs/text" },
+        "recorded_at": { "$ref": "#/$defs/instant" },
+        "concept_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^t[0-9]{3,}-c[0-9]{3,}$" } },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "assessment": { "enum": [null, "correct", "partial", "incorrect", "not_assessed"] },
+        "responds_to_turn_id": { "anyOf": [{ "$ref": "#/$defs/turnId" }, { "type": "null" }] }
+      },
+      "if": { "properties": { "role": { "const": "learner" } } },
+      "then": { "properties": { "assessment": { "type": "null" } } }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "concept_id", "description", "evidence", "learner_turn_id", "recorded_at"],
+      "properties": {
+        "kind": { "enum": ["gap", "insight"] },
+        "concept_id": { "type": "string", "pattern": "^t[0-9]{3,}-c[0-9]{3,}$" },
+        "description": { "$ref": "#/$defs/text" },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "learner_turn_id": { "$ref": "#/$defs/turnId" },
+        "recorded_at": { "$ref": "#/$defs/instant" }
+      }
+    },
+    "session": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "topic_id", "activity", "source_ids", "status", "difficulty", "turns", "observations", "pending_prompt", "started_at", "ended_at", "end_reason", "artifact_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/sessionId" },
+        "topic_id": { "$ref": "#/$defs/topicId" },
+        "activity": { "enum": ["to-question", "socrate"] },
+        "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
+        "status": { "enum": ["in_progress", "completed", "abandoned"] },
+        "difficulty": { "enum": ["basic", "intermediate", "advanced"] },
+        "turns": { "type": "array", "items": { "$ref": "#/$defs/turn" } },
+        "observations": { "type": "array", "items": { "$ref": "#/$defs/observation" } },
+        "pending_prompt": { "$ref": "#/$defs/nullableText" },
+        "started_at": { "$ref": "#/$defs/instant" },
+        "ended_at": { "$ref": "#/$defs/nullableInstant" },
+        "end_reason": { "$ref": "#/$defs/nullableText" },
+        "artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "in_progress" } } },
+          "then": { "properties": { "ended_at": { "type": "null" }, "end_reason": { "type": "null" } } },
+          "else": { "properties": { "ended_at": { "$ref": "#/$defs/instant" }, "pending_prompt": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "completed" } } },
+          "then": {
+            "properties": {
+              "artifact_id": { "$ref": "#/$defs/artifactId" },
+              "end_reason": { "type": "null" },
+              "turns": { "contains": { "properties": { "role": { "const": "learner" } } } }
+            }
+          }
         },
         {
           "if": { "properties": { "status": { "const": "abandoned" } } },
