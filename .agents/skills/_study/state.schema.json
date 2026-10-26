@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shared Study State 1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "revision", "created_at", "updated_at", "main_topic", "current", "topics", "sources", "artifacts", "history", "questions", "attempts", "learning_records"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "created_at": { "$ref": "#/$defs/instant" },
+    "updated_at": { "$ref": "#/$defs/instant" },
+    "main_topic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "objective", "language"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "title": { "$ref": "#/$defs/text" },
+        "objective": { "$ref": "#/$defs/text" },
+        "language": { "$ref": "#/$defs/text" }
+      }
+    },
+    "current": {
+      "type": "object", "additionalProperties": false,
+      "required": ["topic_id", "pending_prompt"],
+      "properties": {
+        "topic_id": { "anyOf": [{ "$ref": "#/$defs/topicId" }, { "type": "null" }] },
+        "pending_prompt": { "$ref": "#/$defs/nullableText" }
+      },
+      "if": { "properties": { "topic_id": { "type": "null" } } },
+      "then": { "properties": { "pending_prompt": { "$ref": "#/$defs/text" } } },
+      "else": { "properties": { "pending_prompt": { "type": "null" } } }
+    },
+    "topics": { "type": "array", "items": { "$ref": "#/$defs/topic" } },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+    "history": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "questions": { "$ref": "#/$defs/reserved" },
+    "attempts": { "$ref": "#/$defs/reserved" },
+    "learning_records": { "$ref": "#/$defs/reserved" }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "nullableText": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+    "instant": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "nullableInstant": { "anyOf": [{ "$ref": "#/$defs/instant" }, { "type": "null" }] },
+    "topicId": { "type": "string", "pattern": "^t[0-9]{3,}$" },
+    "sourceId": { "type": "string", "pattern": "^s[0-9]{3,}$" },
+    "artifactId": { "type": "string", "pattern": "^a[0-9]{3,}$" },
+    "sourceIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sourceId" } },
+    "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?![A-Za-z]:).+$" },
+    "reserved": { "type": "array", "maxItems": 0 },
+    "stepId": { "enum": ["to-map", "to-drill", "to-question", "socrate", "feynman", "to-docs", "to-review"] },
+    "status": { "enum": ["pending", "in_progress", "awaiting_input", "blocked", "completed", "skipped", "unavailable"] },
+    "checkpoint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["activity", "mode", "status", "pending_prompt", "next_action"],
+      "properties": {
+        "activity": { "anyOf": [{ "$ref": "#/$defs/stepId" }, { "const": "source_ingestion" }] },
+        "mode": { "enum": ["orchestrated", "standalone"] },
+        "status": { "$ref": "#/$defs/status" },
+        "pending_prompt": { "$ref": "#/$defs/nullableText" },
+        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "await_next_method", "recover_state"] }
+      },
+      "if": { "properties": { "status": { "enum": ["awaiting_input", "blocked"] } } },
+      "then": { "properties": { "pending_prompt": { "$ref": "#/$defs/text" } } }
+    },
+    "step": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "reason", "artifact_id", "completed_at"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "reason": { "$ref": "#/$defs/nullableText" },
+        "artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] },
+        "completed_at": { "$ref": "#/$defs/nullableInstant" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "completed" } } },
+          "then": { "properties": { "completed_at": { "$ref": "#/$defs/instant" }, "artifact_id": { "$ref": "#/$defs/artifactId" } } },
+          "else": { "properties": { "completed_at": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["blocked", "skipped", "unavailable"] } } },
+          "then": { "properties": { "reason": { "$ref": "#/$defs/text" } } }
+        }
+      ]
+    },
+    "topic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "source_ids", "scope_note", "checkpoint", "concepts", "inventory_complete", "latest_map_artifact_id", "cycle", "steps", "review"],
+      "properties": {
+        "id": { "$ref": "#/$defs/topicId" },
+        "title": { "$ref": "#/$defs/text" },
+        "source_ids": { "$ref": "#/$defs/sourceIds" },
+        "scope_note": { "$ref": "#/$defs/nullableText" },
+        "checkpoint": { "$ref": "#/$defs/checkpoint" },
+        "concepts": { "type": "array", "items": { "$ref": "#/$defs/concept" } },
+        "inventory_complete": { "const": false },
+        "latest_map_artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] },
+        "cycle": {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "completed_at"],
+          "properties": { "status": { "enum": ["not_started", "in_progress"] }, "completed_at": { "type": "null" } }
+        },
+        "steps": {
+          "type": "object", "additionalProperties": false,
+          "required": ["to-map", "to-drill", "to-question", "socrate", "feynman", "to-docs", "to-review"],
+          "properties": {
+            "to-map": { "$ref": "#/$defs/step" },
+            "to-drill": { "$ref": "#/$defs/unavailableStep" },
+            "to-question": { "$ref": "#/$defs/unavailableStep" },
+            "socrate": { "$ref": "#/$defs/unavailableStep" },
+            "feynman": { "$ref": "#/$defs/unavailableStep" },
+            "to-docs": { "$ref": "#/$defs/unavailableStep" },
+            "to-review": { "$ref": "#/$defs/unavailableStep" }
+          }
+        },
+        "review": {
+          "type": "object", "additionalProperties": false,
+          "required": ["eligible", "enrolled_at", "next_due_at", "history"],
+          "properties": { "eligible": { "const": false }, "enrolled_at": { "type": "null" }, "next_due_at": { "type": "null" }, "history": { "$ref": "#/$defs/reserved" } }
+        }
+      }
+    },
+    "unavailableStep": {
+      "allOf": [
+        { "$ref": "#/$defs/step" },
+        { "properties": { "status": { "const": "unavailable" }, "reason": { "$ref": "#/$defs/text" }, "artifact_id": { "type": "null" }, "completed_at": { "type": "null" } } }
+      ]
+    },
+    "concept": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "source_ids", "fundamental", "fundamental_rationale", "assessed_question_ids"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^t[0-9]{3,}-c[0-9]{3,}$" },
+        "label": { "$ref": "#/$defs/text" },
+        "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
+        "fundamental": { "type": "null" },
+        "fundamental_rationale": { "type": "null" },
+        "assessed_question_ids": { "$ref": "#/$defs/reserved" }
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "kind", "locator", "preserved_path", "external_addition", "authorization_note", "access", "inspected_scope", "uncertainties"],
+      "properties": {
+        "id": { "$ref": "#/$defs/sourceId" },
+        "title": { "$ref": "#/$defs/text" },
+        "kind": { "enum": ["markdown", "pdf", "illustration", "video", "text", "other"] },
+        "locator": { "$ref": "#/$defs/text" },
+        "preserved_path": { "anyOf": [{ "$ref": "#/$defs/relativePath" }, { "type": "null" }] },
+        "external_addition": { "type": "boolean" },
+        "authorization_note": { "$ref": "#/$defs/nullableText" },
+        "access": { "enum": ["unavailable", "partial", "read"] },
+        "inspected_scope": { "$ref": "#/$defs/text" },
+        "uncertainties": { "type": "array", "items": { "$ref": "#/$defs/text" } }
+      },
+      "if": { "properties": { "external_addition": { "const": true } } },
+      "then": { "properties": { "authorization_note": { "$ref": "#/$defs/text" } } }
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "topic_ids", "source_ids", "path", "created_at"],
+      "properties": {
+        "id": { "$ref": "#/$defs/artifactId" },
+        "kind": { "const": "orientation_map" },
+        "topic_ids": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "$ref": "#/$defs/topicId" } },
+        "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "created_at": { "$ref": "#/$defs/instant" }
+      }
+    },
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "recorded_at", "topic_id", "kind", "detail"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^h[0-9]{3,}$" },
+        "recorded_at": { "$ref": "#/$defs/instant" },
+        "topic_id": { "anyOf": [{ "$ref": "#/$defs/topicId" }, { "type": "null" }] },
+        "kind": { "$ref": "#/$defs/text" },
+        "detail": { "$ref": "#/$defs/text" }
+      }
+    }
+  }
+}
