@@ -7,6 +7,10 @@ Observed on 2026-10-26, macOS. This page is the authority for local verification
 | OpenCode V2 | Confirmed | 2.0.32: all eight skills advertised; native `init-study` and `to-map` loading succeeded | Full teaching flow, migrations, quiz behavior, relocation in another OpenCode session, cross-agent handoff |
 | Codex CLI / IDE | Confirmed | CLI not on PATH | Native discovery/activation, IDE behavior, handoff |
 | Copilot CLI | Confirmed | 1.0.90: all eight enabled skill metadata entries discovered in both the current project and a fresh relocated bundle | Model activation, teaching/quiz execution, handoff; editor/cloud surfaces are not covered |
+| Claude Code local terminal | Confirmed | 2.1.161 version command only; the native `.claude/skills` copy layout was inspected separately | Native discovery/activation, teaching, handoff; cloud/account-synced surfaces are not covered |
+| Gemini CLI | Confirmed, subject to product/account availability | CLI not on PATH | Trust/activation/teaching; Antigravity is not a substituted target |
+| Cursor local Agent chat | Confirmed | `cursor` and `agent` CLIs not on PATH; editor state not inspected | UI discovery, message/Custom Mode behavior, teaching, remote/cloud scope |
+| Pi coding agent | Confirmed | CLI not on PATH | Native discovery/commands, teaching, handoff |
 
 ## Installer and reference observations
 
@@ -14,6 +18,7 @@ Observed on 2026-10-26, macOS. This page is the authority for local verification
 - Read-only `--check` matched all 18 selected source bundle files.
 - In a fresh disposable project outside the repository, preview reported 18 missing files, apply created those files, and check verified identical installed bytes and resolvable references.
 - Copilot CLI's noninteractive skill list identified all eight enabled skills from that relocated project. Unrelated global skills were filtered out of the observation.
+- The same installer copied and checked 18 files in a separate fresh `.claude/skills` layout, and an independent `to-docs` selection retained its 11 required files. These are filesystem/reference observations, not native Claude activation.
 - No agent application was installed or updated. No model prompt, authentication flow, learner source, learning record, test suite, or scheduled/background task was created.
 
 ## Known verification gaps

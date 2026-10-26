@@ -26,6 +26,10 @@ python3 scripts/install_skills.py --target "$HOME/.agents/skills" --apply
 
 Use project scope first to avoid shadowing skills across unrelated projects. Keep only intended versions visible: hosts resolve duplicate names differently. Personal skill installation does not put learner state in the home skills directory; explicitly select the same learning workspace when switching agents.
 
+## Other discovery roots
+
+Gemini CLI, Cursor local Agent chat, and Pi also document `.agents/skills` for project use. Claude Code's local terminal route uses `.claude/skills`; pass that directory as `--target` to the same installer. It copies the same selected files and references, not an adapted teaching implementation. See [additional-agent guidance](additional-agents.md) for native invocation, trust, lifetime, and local/cloud limitations. This installer deliberately does not create symlink mappings or silently edit host settings.
+
 ## One method or the whole flow
 
 ```sh
