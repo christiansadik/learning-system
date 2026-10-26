@@ -1,6 +1,6 @@
 # Shared Study Workspace Contract
 
-Contract version: **1.5.0**. Before interpreting or writing state, read [state.schema.json](state.schema.json). Read [orientation-format.md](orientation-format.md) for mapping, [practice.md](practice.md) for retrieval practice, [dialogue.md](dialogue.md) for learning dialogues, [explanation.md](explanation.md) for explanation feedback/classification, [exports.md](exports.md) for paired document exports, and [review.md](review.md) for spaced review, scheduling, and progress metrics.
+Contract version: **1.6.0**. Before interpreting or writing state, read [state.schema.json](state.schema.json). Read [orientation-format.md](orientation-format.md) for mapping, [practice.md](practice.md) for retrieval practice, [dialogue.md](dialogue.md) for learning dialogues, [explanation.md](explanation.md) for explanation feedback/classification, [exports.md](exports.md) for paired document exports, and [review.md](review.md) for spaced review, scheduling, and metrics. Read [flow.md](flow.md) when initializing navigation state, running the full flow, or handling a suspended review excursion.
 
 These are shared references, not a discoverable skill. Install `_study` beside each installed study skill directory; individual methods need this reference bundle but not the orchestrator. Agent-specific activation and installation mappings belong outside this contract. The schema and this document are authoritative for persisted data and behavior respectively.
 
@@ -50,16 +50,17 @@ Inspect the existing topic list and source records before adding records. Reuse 
 
 Initialize state conforming to the schema using these values:
 
-- `schema_version`: `1.5.0`; `revision`: `1`; timestamps: actual UTC ISO 8601 instants.
+- `schema_version`: `1.6.0`; `revision`: `1`; timestamps: actual UTC ISO 8601 instants.
 - `main_topic`: stable ID, title, objective, learner language.
 - `current`: `topic_id: null` and `pending_prompt` containing the exact request for the first specific topic and material. When a topic is selected, set `topic_id` and clear this intake-only prompt; the selected topic's checkpoint is then the sole activity authority.
 - `topics`, `sources`, `artifacts`, `history`, `questions`, `attempts`, `learning_records`, and `exports`: empty arrays before creating the corresponding real records.
 - `review_policy`: the persisted default policy specified in the review contract.
+- `flow`: the empty navigation record defined in the full-flow contract. This does not imply a cycle was completed or that a standalone method is orchestrated.
 
 For a new specific topic:
 
 - Save its ID, title, source IDs, empty concept inventory, `inventory_complete: false`, `inventory_note: null`, and `latest_map_artifact_id: null`.
-- Set its cycle to `in_progress` with `completed_at: null`.
+- Set its cycle to `in_progress` with `completed_at: null`, `started_at: null`, and `practice_resolution: null`. The full-flow controller records an actual orchestration start separately.
 - Initialize installed methods listed as available below to `pending` and other named steps to `unavailable`, each with a null artifact, null completion time, and an explanatory reason where appropriate. An independently installed method does not imply its sibling skills are installed: mark missing methods unavailable with that reason.
 - Initialize review to `eligible: false`, `basis: null`, `study_completed_at: null`, `enrolled_at: null`, `next_due_at: null`, `stage: 0`, `history: []`.
 - Set `current.topic_id` to the selected topic and `current.pending_prompt` to null. Initialize the topic's `checkpoint` with current activity, actual interaction mode (`orchestrated` or `standalone`), status, exact pending prompt if any, an explicit next action, `active_attempt_id: null`, `active_session_id: null`, and `active_export_id: null`.
@@ -102,6 +103,8 @@ The seven exact step IDs are `to-map`, `to-drill`, `to-question`, `socrate`, `fe
 
 Initialize only available steps as pending. A stop or session loss leaves the current activity unfinished; never translate it into `completed` or `skipped`. Save before asking a question, after accepting an answer or explicit scope choice, before generating an artifact, and after completing a step.
 
+Determine invocation mode from the current request, not only the persisted mode: explicit entry through `init-study` delegates orchestrated activities; an independent skill request is standalone even if the topic previously used the full flow. Record mode changes with history. Standalone use does not inherit authorization to auto-activate successors or finalize the cycle. Resolve any outstanding review excursion through the full-flow contract before starting unrelated activity that could invalidate its suspended checkpoint.
+
 On resume, read the selected main-topic state and follow `current.topic_id` to that topic's `checkpoint`. Show the main topic's title/objective, selected specific topic, checkpoint activity/status, exact pending prompt, and next action. For an active session, obtain the prompt from its learning record, not the checkpoint's null prompt. If no topic is selected, show the saved intake prompt instead. Ask whether to resume unfinished work or switch if the learner has not already decided.
 
 On a switch, preserve the old topic's complete checkpoint unchanged and select the target topic's existing checkpoint, or initialize one for a new topic. Do not reconstruct activity from narrative history or copy one topic's pending prompt onto another. Changing interaction mode updates only the selected topic's checkpoint and records the change in history.
@@ -116,9 +119,9 @@ Question-only practice/review artifacts record their actual presented question I
 
 Available methods: all seven listed above. Missing installed siblings are unavailable even if implemented in the distribution; unrelated same-named skills are not substitutes. Native activation still follows host permissions.
 
-The intended order is the seven-step order above. After a completed or explicitly skipped method, preserve its result and offer the next method only: set checkpoint activity to that method, clear inactive pointers, and use `awaiting_input`/`activate_method` with an exact invitation when it is available, otherwise `blocked`/`await_next_method` explaining the missing method. The existing `activate_to_drill` action remains valid for saved orientation offers. Wait for the learner before native activation; denied activation is a saved blocker. Never translate a declined invitation into a skipped step or auto-run the remaining sequence.
+The intended order is the seven-step order above. After completion or an explicit skip, preserve the result and clear only inactive pointers. In standalone mode offer the successor with `awaiting_input`/`activate_method`, or a precise blocker if missing. In orchestrated mode return control to the full-flow controller: it validates the gate and continues available agent-only work automatically, yielding for real learner input, permission, or missing information. The existing `activate_to_drill` action remains valid for saved orientation offers. Denied activation is a blocker, not a skip. Never fabricate learner participation to advance.
 
-Full orchestration and automatic cycle enrollment remain later work. Standalone review enrollment uses only the explicit attestation route in the review contract and does not fabricate cycle completion. Other methods leave cycle state and existing schedules unchanged. Generation-only practice can offer the next method without inventing a practice attempt; unfinished work must be resolved first.
+The full-flow contract alone finalizes an initial cycle and enrolls it automatically after all first-six gates; the seventh method is deferred. Standalone enrollment follows explicit attestation, not fabricated workflow completion. Other methods preserve existing cycle/schedule state and record only their own evidence. Generation-only practice is permitted independently, but orchestrated practice requires the controller's additional real-attempt or explicit-skip gate. Unfinished work must be resolved before switching.
 
 ## Save and recovery protocol
 
@@ -129,8 +132,8 @@ Use the host's permitted filesystem tools. No executable runtime is required by 
 3. Write any new artifact to a new numbered filename first, then inspect its contents. Record its scope and evidence in the next state only after the artifact exists. If interrupted before state registration, report the orphan artifact and explicitly reconcile it; do not overwrite or silently adopt it.
 4. Compose the complete next JSON, increment `revision` once per saved update, set `updated_at` to actual UTC time, and append history describing the change. Keep `created_at` unchanged. Add an initial `workspace_initialized` history entry when first saving state.
 5. Check JSON structure against the bundled schema and the semantic invariants below using available tooling or a careful structural read; be explicit if no machine validator is available. Replace state using an atomic write when supported. Otherwise retain the snapshot, write and immediately reread state, and report a failed or incomplete save rather than promising durability.
-6. Before yielding, save the selected topic's next action in its checkpoint. Save the exact pending prompt in the active session record for dialogue, otherwise in the checkpoint; when no topic exists, save the intake prompt instead. Report the workspace location. If saving fails, preserve valid prior state and disclose which updates were not saved.
+6. Before yielding, save the selected topic's next action in its checkpoint. Save the teaching prompt in the active session record for dialogue, otherwise in the checkpoint; when no topic exists, save the intake prompt. Due-review navigation uses its separate flow prompt without replacing any teaching prompt. Report the workspace location. If saving fails, preserve valid prior state and disclose which updates were not saved.
 
-Semantic invariants: IDs are unique within their recorded scope; references resolve; topic/concept source IDs match their declared scope; current topic and artifact scope match the selected activity; artifact paths exist and generated writes remain confined. Completed steps have real timestamps and matching artifacts; skipped/blocked steps have reasons. Apply each method's additional invariants. Enrolled topics have a real enrollment basis/completion time and schedule; unenrolled topics retain null dates and empty review history. Opening state or generating material cannot enroll, grade, or postpone a topic.
+Semantic invariants: IDs are unique within their recorded scope; references resolve; topic/concept source IDs match their declared scope; current topic and artifact scope match the selected activity; artifact paths exist and generated writes remain confined. Completed steps have real timestamps and matching artifacts; skipped/blocked steps have reasons. Apply each method's and the controller's additional invariants. Enrolled topics have a real enrollment basis/completion time and schedule; unenrolled topics retain null dates and empty review history. Mere inspection or material generation cannot enroll, grade, or postpone a topic; enrollment requires the explicit attestation or evidenced full-cycle protocol.
 
 If state is damaged, offer an identified valid snapshot for explicit recovery, preserving the damaged file. If permissions or schema prevent safe updates, pause. Never silently replace state with an older snapshot or initialize a fresh state over it.

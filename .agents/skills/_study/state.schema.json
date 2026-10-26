@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Shared Study State 1.5.0 with read-only legacy compatibility",
+  "title": "Shared Study State 1.6.0 with read-only legacy compatibility",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "revision", "created_at", "updated_at", "main_topic", "current", "topics", "sources", "artifacts", "history", "questions", "attempts", "learning_records"],
   "properties": {
-    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0"] },
+    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0"] },
     "revision": { "type": "integer", "minimum": 1 },
     "created_at": { "$ref": "#/$defs/instant" },
     "updated_at": { "$ref": "#/$defs/instant" },
@@ -38,7 +38,8 @@
     "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } },
     "learning_records": { "type": "array", "items": { "$ref": "#/$defs/session" } },
     "exports": { "type": "array", "items": { "$ref": "#/$defs/export" } },
-    "review_policy": { "$ref": "#/$defs/reviewPolicy" }
+    "review_policy": { "$ref": "#/$defs/reviewPolicy" },
+    "flow": { "$ref": "#/$defs/flow" }
   },
   "allOf": [
     {
@@ -147,6 +148,17 @@
           "attempts": { "items": { "required": ["purpose", "topic_ids", "selection_note", "report_artifact_id"] } }
         }
       }
+    },
+    {
+      "if": { "properties": { "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0"] } } },
+      "then": {
+        "not": { "required": ["flow"] },
+        "properties": { "topics": { "items": { "properties": { "cycle": { "not": { "anyOf": [{ "required": ["started_at"] }, { "required": ["practice_resolution"] }] } } } } } }
+      },
+      "else": {
+        "required": ["flow"],
+        "properties": { "topics": { "items": { "properties": { "cycle": { "required": ["started_at", "practice_resolution"] } } } } }
+      }
     }
   ],
   "$defs": {
@@ -179,7 +191,7 @@
         "active_attempt_id": { "anyOf": [{ "$ref": "#/$defs/attemptId" }, { "type": "null" }] },
         "active_session_id": { "anyOf": [{ "$ref": "#/$defs/sessionId" }, { "type": "null" }] },
         "active_export_id": { "anyOf": [{ "$ref": "#/$defs/exportId" }, { "type": "null" }] },
-        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session", "generate_documents", "choose_next_topic", "offer_review"] }
+        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session", "generate_documents", "choose_next_topic", "offer_review", "finalize_cycle"] }
       },
       "allOf": [
         {
@@ -233,7 +245,12 @@
         "cycle": {
           "type": "object", "additionalProperties": false,
           "required": ["status", "completed_at"],
-          "properties": { "status": { "enum": ["not_started", "in_progress", "completed"] }, "completed_at": { "$ref": "#/$defs/nullableInstant" } },
+          "properties": {
+            "status": { "enum": ["not_started", "in_progress", "completed"] },
+            "completed_at": { "$ref": "#/$defs/nullableInstant" },
+            "started_at": { "$ref": "#/$defs/nullableInstant" },
+            "practice_resolution": { "anyOf": [{ "$ref": "#/$defs/practiceResolution" }, { "type": "null" }] }
+          },
           "if": { "properties": { "status": { "const": "completed" } } },
           "then": { "properties": { "completed_at": { "$ref": "#/$defs/instant" } } },
           "else": { "properties": { "completed_at": { "type": "null" } } }
@@ -554,6 +571,47 @@
         {
           "if": { "properties": { "status": { "const": "abandoned" } } },
           "then": { "properties": { "end_reason": { "$ref": "#/$defs/text" } } }
+        }
+      ]
+    },
+    "practiceResolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["basis", "attempt_id", "reason"],
+      "properties": {
+        "basis": { "enum": ["completed_attempt", "explicit_skip"] },
+        "attempt_id": { "anyOf": [{ "$ref": "#/$defs/attemptId" }, { "type": "null" }] },
+        "reason": { "$ref": "#/$defs/nullableText" }
+      },
+      "if": { "properties": { "basis": { "const": "completed_attempt" } } },
+      "then": { "properties": { "attempt_id": { "$ref": "#/$defs/attemptId" }, "reason": { "type": "null" } } },
+      "else": { "properties": { "attempt_id": { "type": "null" }, "reason": { "$ref": "#/$defs/text" } } }
+    },
+    "flow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pending_prompt", "offered_review_topic_ids", "selected_review_topic_ids", "return_topic_id", "review_owner_topic_id", "review_owner_checkpoint"],
+      "properties": {
+        "pending_prompt": { "$ref": "#/$defs/nullableText" },
+        "offered_review_topic_ids": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/topicId" } },
+        "selected_review_topic_ids": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/topicId" } },
+        "return_topic_id": { "anyOf": [{ "$ref": "#/$defs/topicId" }, { "type": "null" }] },
+        "review_owner_topic_id": { "anyOf": [{ "$ref": "#/$defs/topicId" }, { "type": "null" }] },
+        "review_owner_checkpoint": {
+          "anyOf": [
+            { "allOf": [{ "$ref": "#/$defs/checkpoint" }, { "required": ["active_attempt_id", "active_session_id", "active_export_id"], "properties": { "active_attempt_id": { "type": "null" }, "active_session_id": { "type": "null" }, "active_export_id": { "type": "null" } } }] },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "review_owner_topic_id": { "type": "string" } } },
+          "then": { "properties": { "review_owner_checkpoint": { "type": "object" }, "pending_prompt": { "type": "null" }, "offered_review_topic_ids": { "maxItems": 0 }, "selected_review_topic_ids": { "minItems": 1 } } },
+          "else": { "properties": { "review_owner_checkpoint": { "type": "null" }, "return_topic_id": { "type": "null" }, "selected_review_topic_ids": { "maxItems": 0 } } }
+        },
+        {
+          "if": { "properties": { "offered_review_topic_ids": { "minItems": 1 } } },
+          "then": { "properties": { "pending_prompt": { "$ref": "#/$defs/text" } } },
+          "else": { "properties": { "pending_prompt": { "type": "null" } } }
         }
       ]
     },

@@ -46,3 +46,10 @@ For each transition, follow the workspace save protocol: inspect legacy structur
 - Add `inventory_note: null` to each topic and `in_scope: true` to existing concepts as the known inventory, retaining `inventory_complete: false`. Reconcile known scope changes explicitly rather than deleting historical concepts.
 - Add `purpose: practice`, `topic_ids: [topic_id]`, `selection_note: null`, and `report_artifact_id: null` to every old attempt, preserving its ID, answers, exclusions, status, and pending work.
 - Make installed `to-review` pending if previously unavailable. A checkpoint blocked solely at that method may offer standalone enrollment only when no other work is active. Preserve all other prompts, pointers, outputs, classifications, and source records.
+
+## 1.5.0 → 1.6.0
+
+- Set `schema_version` to `1.6.0`; initialize the empty flow navigation record from the flow contract. Do not create a pending review offer or suspended checkpoint during migration.
+- Add `started_at: null` and `practice_resolution: null` to each cycle. Do not infer a historical orchestration start or invent learner participation. Actual matching completed practice may be selected later by the controller after checking its scope.
+- Preserve existing cycle completion times/statuses, enrollment basis, policy, due dates, schedule outcomes, active work, prompts, source scope, and all artifacts. Migration never automatically enrolls or resets a topic.
+- An explicit later `init-study` request may enter the full flow and validate existing evidence; standalone calls remain standalone and cannot retroactively complete unrelated methods.

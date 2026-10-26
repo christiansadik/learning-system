@@ -22,6 +22,8 @@ The artifact record's ordered `question_ids` identifies exactly which immutable 
 
 After generation without practice consent, save an `awaiting_input` checkpoint with `next_action: offer_practice`, the selected topic, and no active attempt. On explicit refusal or a generation-only request, use the release-boundary checkpoint below. Do not create a fake completed attempt for a declined exercise.
 
+In orchestrated mode the full-flow contract adds a practice gate: after a completed practice attempt with a real learner answer, record its ID as `cycle.practice_resolution` with basis `completed_attempt` and null reason. To proceed without practice, require an explicit skip choice/reason and record basis `explicit_skip` with null attempt ID. A vague decline or “not now” is a pause, not that skip. Generation alone, an abandoned attempt, or an all-revealed attempt without actual learner answers cannot satisfy this gate. Preserve prior attempts and let the controller validate/reuse matching evidence rather than inventing participation.
+
 ## Attempts and learner answers
 
 Each attempt stores its kind, ordered question IDs, status, actual start and optional completion timestamps, and responses. Only one unfinished active attempt per specific topic is supported. Select it with the topic checkpoint's `active_attempt_id`; this pointer, not narrative history, controls resumption. Switching topics preserves every topic's pointer and pending prompt.
