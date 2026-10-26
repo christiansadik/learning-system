@@ -24,3 +24,10 @@ For each transition, follow the workspace save protocol: inspect legacy structur
 - For installed `to-question` and `socrate`, change unavailable steps to pending and clear their unavailable reasons. Preserve other states and the unavailable later methods.
 - Only a checkpoint blocked solely at the newly available next method may become an offer to activate it, and only when no practice attempt is active. Do not advance an unfinished or declined activity.
 - Preserve question/attempt history, concept assessment indices, cycle status, and null review dates.
+
+## 1.2.0 → 1.3.0
+
+- Set `schema_version` to `1.3.0`. Make installed `feynman` pending only if previously unavailable, clearing the unavailable reason.
+- Existing concepts retain null fundamental status/rationale until actually classified in context. Do not retroactively reinterpret older turns or add categorized feedback to them.
+- Preserve all active attempts/sessions, prompts, turns, observations, maps, and quiz evidence. Only a checkpoint blocked solely at newly available `feynman`, with no active work, may become an activation offer.
+- New explanation sessions use the existing session shape with activity `feynman`; their actual observations require the documented feedback category. No record is fabricated during migration.

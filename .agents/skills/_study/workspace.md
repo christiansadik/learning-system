@@ -1,6 +1,6 @@
 # Shared Study Workspace Contract
 
-Contract version: **1.2.0**. Before interpreting or writing state, read [state.schema.json](state.schema.json). Read [orientation-format.md](orientation-format.md) for mapping, [practice.md](practice.md) for retrieval practice, and [dialogue.md](dialogue.md) for learning dialogues.
+Contract version: **1.3.0**. Before interpreting or writing state, read [state.schema.json](state.schema.json). Read [orientation-format.md](orientation-format.md) for mapping, [practice.md](practice.md) for retrieval practice, [dialogue.md](dialogue.md) for learning dialogues, and [explanation.md](explanation.md) for explanation feedback and fundamental classification.
 
 These are shared references, not a discoverable skill. Install `_study` beside each installed study skill directory; individual methods need this reference bundle but not the orchestrator. Agent-specific activation and installation mappings belong outside this contract. The schema and this document are authoritative for persisted data and behavior respectively.
 
@@ -46,7 +46,7 @@ Inspect the existing topic list and source records before adding records. Reuse 
 
 Initialize state conforming to the schema using these values:
 
-- `schema_version`: `1.2.0`; `revision`: `1`; timestamps: actual UTC ISO 8601 instants.
+- `schema_version`: `1.3.0`; `revision`: `1`; timestamps: actual UTC ISO 8601 instants.
 - `main_topic`: stable ID, title, objective, learner language.
 - `current`: `topic_id: null` and `pending_prompt` containing the exact request for the first specific topic and material. When a topic is selected, set `topic_id` and clear this intake-only prompt; the selected topic's checkpoint is then the sole activity authority.
 - `topics`, `sources`, `artifacts`, `history`, `questions`, `attempts`, and `learning_records`: empty arrays before creating the corresponding real records.
@@ -79,7 +79,7 @@ Each concept has a stable ID, label, source IDs, and optional fundamental classi
 
 `inventory_complete` means the documented study scope's concept inventory was deliberately checked for completeness; a ten-concept orientation is not sufficient evidence. Leave it false in this release. Topic correctness and coverage percentages are not produced by orientation.
 
-The schema defines `questions` and `attempts` for immediate practice; read the practice contract before populating them or derived `assessed_question_ids`. Learning dialogues use `learning_records` through the dialogue contract and do not populate quiz metrics. Topic review `history` remains reserved empty. Fundamental classification remains null pending later methods. Creating a map never populates practice or assessment records.
+The schema defines `questions` and `attempts` for immediate practice; read the practice contract before populating them or derived `assessed_question_ids`. Learning dialogues use `learning_records` through the dialogue contract and do not populate quiz metrics. Topic review `history` remains reserved empty. Fundamental status starts null; follow the explanation contract before classifying or revising it. Creating a map never populates practice or assessment records.
 
 ## Lifecycle and resumption
 
@@ -109,7 +109,7 @@ All non-practice artifacts record `question_ids: []`; practice artifacts record 
 
 ### Availability and continuation
 
-Available methods: `to-map`, `to-drill`, `to-question`, `socrate`. `feynman`, `to-docs`, and `to-review` remain unavailable in this release. Missing installed siblings are unavailable even if implemented in the distribution; unrelated same-named skills are not substitutes.
+Available methods: `to-map`, `to-drill`, `to-question`, `socrate`, `feynman`. `to-docs` and `to-review` remain unavailable in this release. Missing installed siblings are unavailable even if implemented in the distribution; unrelated same-named skills are not substitutes.
 
 The intended order is the seven-step order above. After a completed or explicitly skipped method, preserve its result and offer the next method only: set checkpoint activity to that method, clear inactive pointers, and use `awaiting_input`/`activate_method` with an exact invitation when it is available, otherwise `blocked`/`await_next_method` explaining the missing method. The existing `activate_to_drill` action remains valid for saved orientation offers. Wait for the learner before native activation; denied activation is a saved blocker. Never translate a declined invitation into a skipped step or auto-run the remaining sequence.
 
@@ -126,6 +126,6 @@ Use the host's permitted filesystem tools. No executable runtime is required by 
 5. Check JSON structure against the bundled schema and the semantic invariants below using available tooling or a careful structural read; be explicit if no machine validator is available. Replace state using an atomic write when supported. Otherwise retain the snapshot, write and immediately reread state, and report a failed or incomplete save rather than promising durability.
 6. Before yielding, save the selected topic's next action in its checkpoint. Save the exact pending prompt in the active session record for dialogue, otherwise in the checkpoint; when no topic exists, save the intake prompt instead. Report the workspace location. If saving fails, preserve valid prior state and disclose which updates were not saved.
 
-Semantic invariants: IDs are unique within their recorded scope; references resolve; each topic's source IDs refer to registered sources; concept source IDs belong to the topic; current topic and artifact scope match the selected activity; referenced artifact paths exist; source and artifact relative paths are confined to the workspace. Every `completed` step has a real completion timestamp and a matching registered artifact. Skipped and blocked steps have reasons. Apply practice/dialogue invariants when their records exist. In this release, cycle completion time and all review enrollment/due fields stay null and the three later methods stay unavailable.
+Semantic invariants: IDs are unique within their recorded scope; references resolve; each topic's source IDs refer to registered sources; concept source IDs belong to the topic; current topic and artifact scope match the selected activity; referenced artifact paths exist; source and artifact relative paths are confined to the workspace. Every `completed` step has a real completion timestamp and a matching registered artifact. Skipped and blocked steps have reasons. Apply practice/dialogue/explanation invariants when relevant. In this release, cycle completion time and all review enrollment/due fields stay null and the two later methods stay unavailable.
 
 If state is damaged, offer an identified valid snapshot for explicit recovery, preserving the damaged file. If permissions or schema prevent safe updates, pause. Never silently replace state with an older snapshot or initialize a fresh state over it.

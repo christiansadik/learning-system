@@ -1,6 +1,6 @@
 # Stateful Learning Dialogues
 
-Available from state **1.2.0**. Read [workspace.md](workspace.md) and [state.schema.json](state.schema.json). `to-question` and `socrate` use this contract; later explanation sessions may reuse it. These sessions are separate from quiz attempts and never change quiz percentages or assessed-question indices.
+Introduced in state **1.2.0**; use the current version from [workspace.md](workspace.md) and read [state.schema.json](state.schema.json). `to-question`, `socrate`, and `feynman` use this contract; for the latter also read [explanation.md](explanation.md). These sessions are separate from quiz attempts and never change quiz percentages or assessed-question indices.
 
 ## Session identity and records
 
