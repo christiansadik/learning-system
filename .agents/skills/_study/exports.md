@@ -50,5 +50,5 @@ On explicit abandonment, save its reason/end time, preserve files and registrati
 - Sources and concept evidence belong to the declared selected scope. Every selected topic has readable evidence or an explicitly accepted partial scope; absent topics are never silently removed.
 - Exactly one map and one explanation belong to a completed export, at distinct planned paths. Artifact kinds, scope, source IDs, and paths match that export.
 - An active export pointer references an in-progress export owned by that topic; it cannot coexist with an active attempt/session. No two in-progress exports overlap selected topic IDs.
-- Single-topic orientation, practice, and dialogue artifacts retain their one-topic scope; only paired export artifacts accept multiple topics.
+- Orientation, immediate-practice, and dialogue artifacts retain single-topic scope. Paired export artifacts and separately defined cumulative-review artifacts may cover multiple topics under their own contracts.
 - Completion requires both artifact IDs, no end reason, and an actual end time; abandonment requires a reason. Planned paths and generated writes remain workspace-confined.

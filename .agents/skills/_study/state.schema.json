@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Shared Study State 1.4.0 with read-only legacy compatibility",
+  "title": "Shared Study State 1.5.0 with read-only legacy compatibility",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "revision", "created_at", "updated_at", "main_topic", "current", "topics", "sources", "artifacts", "history", "questions", "attempts", "learning_records"],
   "properties": {
-    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"] },
+    "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0"] },
     "revision": { "type": "integer", "minimum": 1 },
     "created_at": { "$ref": "#/$defs/instant" },
     "updated_at": { "$ref": "#/$defs/instant" },
@@ -37,7 +37,8 @@
     "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
     "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } },
     "learning_records": { "type": "array", "items": { "$ref": "#/$defs/session" } },
-    "exports": { "type": "array", "items": { "$ref": "#/$defs/export" } }
+    "exports": { "type": "array", "items": { "$ref": "#/$defs/export" } },
+    "review_policy": { "$ref": "#/$defs/reviewPolicy" }
   },
   "allOf": [
     {
@@ -119,6 +120,33 @@
         "required": ["exports"],
         "properties": { "topics": { "items": { "properties": { "checkpoint": { "required": ["active_export_id"] } } } } }
       }
+    },
+    {
+      "if": { "properties": { "schema_version": { "enum": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"] } } },
+      "then": {
+        "not": { "required": ["review_policy"] },
+        "properties": {
+          "topics": { "items": {
+            "not": { "required": ["inventory_note"] },
+            "properties": {
+              "inventory_complete": { "const": false },
+              "concepts": { "items": { "not": { "required": ["in_scope"] } } },
+              "cycle": { "properties": { "status": { "enum": ["not_started", "in_progress"] }, "completed_at": { "type": "null" } } },
+              "steps": { "properties": { "to-review": { "$ref": "#/$defs/unavailableStep" } } },
+              "review": { "$ref": "#/$defs/legacyReview" }
+            }
+          } },
+          "attempts": { "items": { "not": { "anyOf": [{ "required": ["purpose"] }, { "required": ["topic_ids"] }, { "required": ["selection_note"] }, { "required": ["report_artifact_id"] }] } } },
+          "artifacts": { "items": { "properties": { "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary", "concept_map", "explanation"] } } } }
+        }
+      },
+      "else": {
+        "required": ["review_policy"],
+        "properties": {
+          "topics": { "items": { "required": ["inventory_note"], "properties": { "review": { "$ref": "#/$defs/reviewState" }, "concepts": { "items": { "required": ["in_scope"] } } } } },
+          "attempts": { "items": { "required": ["purpose", "topic_ids", "selection_note", "report_artifact_id"] } }
+        }
+      }
     }
   ],
   "$defs": {
@@ -151,7 +179,7 @@
         "active_attempt_id": { "anyOf": [{ "$ref": "#/$defs/attemptId" }, { "type": "null" }] },
         "active_session_id": { "anyOf": [{ "$ref": "#/$defs/sessionId" }, { "type": "null" }] },
         "active_export_id": { "anyOf": [{ "$ref": "#/$defs/exportId" }, { "type": "null" }] },
-        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session", "generate_documents"] }
+        "next_action": { "enum": ["provide_material", "confirm_scope", "resume_activity", "activate_to_map", "activate_to_drill", "offer_practice", "answer_question", "evaluate_answers", "await_next_method", "recover_state", "activate_method", "formulate_question", "respond_to_learner", "finish_session", "generate_documents", "choose_next_topic", "offer_review"] }
       },
       "allOf": [
         {
@@ -199,12 +227,16 @@
         "scope_note": { "$ref": "#/$defs/nullableText" },
         "checkpoint": { "$ref": "#/$defs/checkpoint" },
         "concepts": { "type": "array", "items": { "$ref": "#/$defs/concept" } },
-        "inventory_complete": { "const": false },
+        "inventory_complete": { "type": "boolean" },
+        "inventory_note": { "$ref": "#/$defs/nullableText" },
         "latest_map_artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] },
         "cycle": {
           "type": "object", "additionalProperties": false,
           "required": ["status", "completed_at"],
-          "properties": { "status": { "enum": ["not_started", "in_progress"] }, "completed_at": { "type": "null" } }
+          "properties": { "status": { "enum": ["not_started", "in_progress", "completed"] }, "completed_at": { "$ref": "#/$defs/nullableInstant" } },
+          "if": { "properties": { "status": { "const": "completed" } } },
+          "then": { "properties": { "completed_at": { "$ref": "#/$defs/instant" } } },
+          "else": { "properties": { "completed_at": { "type": "null" } } }
         },
         "steps": {
           "type": "object", "additionalProperties": false,
@@ -216,15 +248,13 @@
             "socrate": { "$ref": "#/$defs/step" },
             "feynman": { "$ref": "#/$defs/step" },
             "to-docs": { "$ref": "#/$defs/step" },
-            "to-review": { "$ref": "#/$defs/unavailableStep" }
+            "to-review": { "$ref": "#/$defs/step" }
           }
         },
-        "review": {
-          "type": "object", "additionalProperties": false,
-          "required": ["eligible", "enrolled_at", "next_due_at", "history"],
-          "properties": { "eligible": { "const": false }, "enrolled_at": { "type": "null" }, "next_due_at": { "type": "null" }, "history": { "$ref": "#/$defs/reserved" } }
-        }
-      }
+        "review": { "anyOf": [{ "$ref": "#/$defs/legacyReview" }, { "$ref": "#/$defs/reviewState" }] }
+      },
+      "if": { "properties": { "inventory_complete": { "const": true } } },
+      "then": { "required": ["inventory_note"], "properties": { "inventory_note": { "$ref": "#/$defs/text" } } }
     },
     "unavailableStep": {
       "allOf": [
@@ -241,6 +271,7 @@
         "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
         "fundamental": { "type": ["boolean", "null"] },
         "fundamental_rationale": { "$ref": "#/$defs/nullableText" },
+        "in_scope": { "type": "boolean" },
         "assessed_question_ids": { "$ref": "#/$defs/questionIds" }
       },
       "if": { "properties": { "fundamental": { "type": "boolean" } } },
@@ -270,7 +301,7 @@
       "required": ["id", "kind", "topic_ids", "source_ids", "path", "created_at"],
       "properties": {
         "id": { "$ref": "#/$defs/artifactId" },
-        "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary", "concept_map", "explanation"] },
+        "kind": { "enum": ["orientation_map", "practice_questions", "dialogue_summary", "concept_map", "explanation", "review_questions", "review_report"] },
         "topic_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/topicId" } },
         "source_ids": { "allOf": [{ "$ref": "#/$defs/sourceIds" }], "minItems": 1 },
         "path": { "$ref": "#/$defs/relativePath" },
@@ -279,7 +310,7 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "kind": { "const": "practice_questions" } } },
+          "if": { "properties": { "kind": { "enum": ["practice_questions", "review_questions"] } } },
           "then": { "required": ["question_ids"], "properties": { "question_ids": { "minItems": 1 } } },
           "else": { "properties": { "question_ids": { "maxItems": 0 } } }
         },
@@ -378,6 +409,10 @@
         "topic_id": { "$ref": "#/$defs/topicId" },
         "kind": { "enum": ["flashcard", "multiple_choice"] },
         "artifact_id": { "$ref": "#/$defs/artifactId" },
+        "purpose": { "enum": ["practice", "review"] },
+        "topic_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/topicId" } },
+        "selection_note": { "$ref": "#/$defs/nullableText" },
+        "report_artifact_id": { "anyOf": [{ "$ref": "#/$defs/artifactId" }, { "type": "null" }] },
         "question_ids": { "allOf": [{ "$ref": "#/$defs/questionIds" }], "minItems": 1 },
         "status": { "enum": ["in_progress", "completed", "abandoned"] },
         "started_at": { "$ref": "#/$defs/instant" },
@@ -387,6 +422,18 @@
         "responses": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/response" } }
       },
       "allOf": [
+        {
+          "if": { "required": ["purpose"], "properties": { "purpose": { "const": "review" } } },
+          "then": {
+            "properties": { "kind": { "const": "multiple_choice" }, "selection_note": { "$ref": "#/$defs/text" } },
+            "if": { "properties": { "status": { "const": "completed" } } },
+            "then": { "properties": { "report_artifact_id": { "$ref": "#/$defs/artifactId" } } }
+          }
+        },
+        {
+          "if": { "required": ["purpose"], "properties": { "purpose": { "const": "practice" } } },
+          "then": { "properties": { "topic_ids": { "maxItems": 1 }, "selection_note": { "type": "null" }, "report_artifact_id": { "type": "null" } } }
+        },
         {
           "if": { "properties": { "status": { "const": "in_progress" } } },
           "then": { "properties": { "completed_at": { "type": "null" }, "end_reason": { "type": "null" } } },
@@ -509,6 +556,52 @@
           "then": { "properties": { "end_reason": { "$ref": "#/$defs/text" } } }
         }
       ]
+    },
+    "legacyReview": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligible", "enrolled_at", "next_due_at", "history"],
+      "properties": { "eligible": { "const": false }, "enrolled_at": { "type": "null" }, "next_due_at": { "type": "null" }, "history": { "$ref": "#/$defs/reserved" } }
+    },
+    "reviewPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["interval_days", "weak_interval_days", "strong_interval_days"],
+      "properties": {
+        "interval_days": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "integer", "minimum": 1 } },
+        "weak_interval_days": { "type": "integer", "minimum": 1 },
+        "strong_interval_days": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "reviewState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligible", "basis", "study_completed_at", "enrolled_at", "next_due_at", "stage", "history"],
+      "properties": {
+        "eligible": { "type": "boolean" },
+        "basis": { "enum": [null, "cycle_completion", "learner_attestation"] },
+        "study_completed_at": { "$ref": "#/$defs/nullableInstant" },
+        "enrolled_at": { "$ref": "#/$defs/nullableInstant" },
+        "next_due_at": { "$ref": "#/$defs/nullableInstant" },
+        "stage": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "history": { "type": "array", "items": { "$ref": "#/$defs/reviewOutcome" } }
+      },
+      "if": { "properties": { "eligible": { "const": true } } },
+      "then": { "properties": { "basis": { "enum": ["cycle_completion", "learner_attestation"] }, "study_completed_at": { "$ref": "#/$defs/instant" }, "enrolled_at": { "$ref": "#/$defs/instant" }, "next_due_at": { "$ref": "#/$defs/instant" } } },
+      "else": { "properties": { "basis": { "type": "null" }, "study_completed_at": { "type": "null" }, "enrolled_at": { "type": "null" }, "next_due_at": { "type": "null" }, "stage": { "const": 0 }, "history": { "maxItems": 0 } } }
+    },
+    "reviewOutcome": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attempt_id", "recorded_at", "correct", "evaluated", "excluded", "previous_due_at", "next_due_at", "stage", "recommendation", "deep_concept_ids"],
+      "properties": {
+        "attempt_id": { "$ref": "#/$defs/attemptId" },
+        "recorded_at": { "$ref": "#/$defs/instant" },
+        "correct": { "type": "integer", "minimum": 0 },
+        "evaluated": { "type": "integer", "minimum": 0 },
+        "excluded": { "type": "integer", "minimum": 0 },
+        "previous_due_at": { "$ref": "#/$defs/instant" },
+        "next_due_at": { "$ref": "#/$defs/instant" },
+        "stage": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "recommendation": { "enum": ["none", "review", "deepen", "review_and_deepen", "insufficient_evidence"] },
+        "deep_concept_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^t[0-9]{3,}-c[0-9]{3,}$" } }
+      }
     },
     "event": {
       "type": "object", "additionalProperties": false,

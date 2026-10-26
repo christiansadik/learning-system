@@ -38,3 +38,11 @@ For each transition, follow the workspace save protocol: inspect legacy structur
 - Make installed `to-docs` pending only if previously unavailable, clearing its unavailable reason. Do not invent export files or artifact registrations.
 - Preserve active practice/dialogues, all source scope, classification history, outputs, and quiz evidence. Only a checkpoint blocked solely at newly available `to-docs`, without active work, may become an activation offer.
 - Existing artifacts retain their single-topic scope and fields. Multi-topic scope is permitted only for newly created paired export artifacts. Review enrollment and due dates remain unset.
+
+## 1.4.0 → 1.5.0
+
+- Set `schema_version` to `1.5.0` and initialize the persisted review-policy defaults from the review contract.
+- Extend each previously unenrolled review state with `basis: null`, `study_completed_at: null`, and `stage: 0`; retain false eligibility, null enrollment/due dates, and empty history. Migration itself never enrolls a topic or invents completion.
+- Add `inventory_note: null` to each topic and `in_scope: true` to existing concepts as the known inventory, retaining `inventory_complete: false`. Reconcile known scope changes explicitly rather than deleting historical concepts.
+- Add `purpose: practice`, `topic_ids: [topic_id]`, `selection_note: null`, and `report_artifact_id: null` to every old attempt, preserving its ID, answers, exclusions, status, and pending work.
+- Make installed `to-review` pending if previously unavailable. A checkpoint blocked solely at that method may offer standalone enrollment only when no other work is active. Preserve all other prompts, pointers, outputs, classifications, and source records.

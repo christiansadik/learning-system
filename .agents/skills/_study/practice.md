@@ -26,6 +26,8 @@ After generation without practice consent, save an `awaiting_input` checkpoint w
 
 Each attempt stores its kind, ordered question IDs, status, actual start and optional completion timestamps, and responses. Only one unfinished active attempt per specific topic is supported. Select it with the topic checkpoint's `active_attempt_id`; this pointer, not narrative history, controls resumption. Switching topics preserves every topic's pointer and pending prompt.
 
+New immediate attempts use `purpose: practice`, `topic_ids: [topic_id]`, `selection_note: null`, and `report_artifact_id: null`. Review-purpose attempts reuse the response/evaluation rules but follow [review.md](review.md) for multiple-topic reservations, artifacts, reports, scheduling, and finalization; do not handle one as an immediate drill. Practice never changes review due dates.
+
 Create all response records with `answer: null`, `selected_option_id: null`, `assistance: none`, `correct: null`, `evaluation_reason: null`, and both timestamps null. Save the attempt and checkpoint before displaying a prompt. `pending_question_id` selects the next unresolved item; it may be null when responses are waiting for correction. Distinguish an absent answer from the learner's explicit skip.
 
 - **Flashcards:** show one front at a time. Wait for the learner's answer or explicit request to reveal. Save their actual answer, then compare against the expected answer and rubric. Accept semantically correct wording, distinguish missing core content from harmless phrasing, and explain feedback using sources. Reveal the explanation only after their response or explicit reveal request. Save before offering the next card.
@@ -49,13 +51,13 @@ For each unaided evaluated response in a completed attempt, add its question ID 
 
 On resume, read the active attempt and restore the same question order and the exact pending prompt. If all responses are answered but not evaluated, resume correction rather than asking the questions again. If an attempt is completed but the checkpoint was not advanced, finish the bookkeeping idempotently; do not duplicate attempts or assessment references. Conflicting checkpoint/attempt references are blockers requiring explicit reconciliation, not a reason to reset progress.
 
-When practice is completed or declined, clear the inactive attempt pointer and follow the workspace continuation rule. Explicit abandonment ends only the attempt: preserve any already completed deck-generation step, and ask whether to restart or select another activity rather than advancing automatically. Keep the overall cycle in progress and review enrollment/due dates null. Starting another practice set is always an explicit learner choice.
+When practice is completed or declined, clear the inactive attempt pointer and follow the workspace continuation rule. Explicit abandonment ends only the attempt: preserve any already completed deck-generation step, and ask whether to restart or select another activity rather than advancing automatically. Preserve cycle state and existing review enrollment/due dates; practice does not enroll, reset, or postpone a review. Starting another practice set is always an explicit learner choice.
 
 ## Semantic checks beyond JSON Schema
 
 - Question IDs, attempt IDs, and responses' question IDs are unique in their scope. `question_ids` contains exactly the response IDs in the same saved order.
 - Each question's concept belongs to its specific topic; all evidence sources are registered for that topic and were read for the declared scope.
-- Attempt questions have the same topic and question kind as the attempt, and belong to its registered deck. Deck scope, question IDs, and source IDs agree.
+- Practice-purpose questions have the same topic and kind as their single-topic attempt. Review-purpose questions retain their own primary topic in `attempt.topic_ids`, with the common multiple-choice kind; `attempt.topic_id` is only the owner, not their grading attribution. All questions belong to the registered deck and its declared scope/source evidence.
 - An answer-bearing multiple-choice response with assistance `none` or `hint` must have an offered `selected_option_id` before evaluation, consistent with the preserved raw answer or recorded clarification. Ask on ambiguous input rather than guessing. Revealed, skipped, or invalidated exclusions may have a null selection and no learner answer; record their reason and evaluation time without inventing a selection. Flashcard answers are free text with a null selection.
 - Each attempt's `pending_question_id`, if nonnull, names its next unresolved response. It becomes null before final completion or correction when no unanswered response remains.
 - Answered items have a response time. Evaluation timestamps do not precede responses; completion does not precede start or included evaluations. Reveals and skips are still recorded with actual times.
