@@ -12,6 +12,15 @@ Keep agent-specific integration separate from the study methodology.
   without explicit approval.
 - Document verified agent support separately from planned support.
 
+## Skill packaging
+
+Edit canonical templates in `authoring/skills/` and shared contracts in
+`authoring/references/`. `skills/` contains generated, self-contained packages
+for standard Agent Skills installers; never maintain their contents by hand.
+Preview changes with `python3 scripts/build_skills.py`, regenerate with
+`--write`, and inspect reproducibility with `--check`. Keep learner data and
+local `.agents/skills` installations outside the published source tree.
+
 ## Commit messages
 
 Follow [Baeldung's commit message guidelines](https://www.baeldung.com/ops/git-commit-messages).

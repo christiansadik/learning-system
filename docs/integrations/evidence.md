@@ -23,7 +23,18 @@ Observed on 2026-10-26, macOS. This page is the authority for local verification
 
 ## License packaging update — 2026-10-27
 
-MIT licensing was added after the initial observations above. The current allowlist contains 19 files, including `_study/LICENSE.md`, rather than the original 18. The installer verifies that the bundled notice matches the canonical root `LICENSE`; its read-only check matched all 19 current source bundle files. The earlier 18-file and 11-file copy observations remain historical, not claims about the new file count. No additional agent activation or learner behavior was exercised for this licensing update.
+MIT licensing was added after the initial observations above. At that stage the allowlist contained 19 files, including `_study/LICENSE.md`, rather than the original 18. The installer verified that the bundled notice matched the canonical root `LICENSE`; its read-only check matched those 19 source files. These counts describe the former sibling-reference layout, not the current packages. No additional agent activation or learner behavior was exercised for that update.
+
+## Standard self-contained packaging — 2026-10-27
+
+- Canonical authoring moved outside skill discovery; eight generated `skills/<name>/` packages each include `SKILL.md`, ten reference files, and `LICENSE`. The reproducibility check matched all 96 package files and the build receipt.
+- Skills CLI **1.7.4**, run through `npx` with Node.js 24.21.0, discovered exactly eight skills in a clean local source containing both `authoring/` and `skills/`.
+- A project-scoped `--copy` installation of all eight skills for `opencode` preserved all expected package bytes, internal references, and license notices.
+- A separate `--copy` installation of only `to-docs` for `claude-code` preserved its complete 12-file package; no sibling `_study` directory was needed.
+- Default installation of `to-docs` accepted all seven documented target-agent IDs. Its canonical package matched all 12 files and the created agent link resolved to that package. Shared canonical locations mean this did not create seven separate directory copies.
+- Inspections used disposable local projects, not learner workspaces. Telemetry was disabled; no agent application, model session, login, automated test suite, commit, or push was launched by these packaging checks.
+
+These observations exercise the standard installer, not native teaching or handoff. The repository-shorthand GitHub download remains unverified until the new generated packages are committed and published. Earlier native-loader observations are historical and have not been repeated for this new packaging.
 
 ## Known verification gaps
 

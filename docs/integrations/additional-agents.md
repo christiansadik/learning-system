@@ -1,18 +1,16 @@
 # Additional Agent Integrations
 
-Documentation checked: 2026-10-26. Use the same [installer and preservation rules](install.md); only the host's discovery root and invocation differ. This release ships local filesystem skills, not plugins, cloud account synchronization, agent software, or credentials.
+Host documentation checked: 2026-10-26; packaging updated 2026-10-27. Use the [standard Skills CLI](install.md) to select your agents, or the conservative Python fallback. Every skill now contains its references and license. These are local skills, not cloud account synchronization, agent software, or credentials. Earlier native/version observations below remain historical.
 
 ## Claude Code local terminal
 
-Claude Code documents `.claude/skills` for project skills. Install the complete selected bundle, including the `_study` sibling, there:
+Claude Code documents `.claude/skills` for project skills. With the standard CLI:
 
 ```sh
-python3 scripts/install_skills.py --target /path/to/study-project/.claude/skills
-python3 scripts/install_skills.py --target /path/to/study-project/.claude/skills --apply
-python3 scripts/install_skills.py --target /path/to/study-project/.claude/skills --check
+npx skills add christiansadik/learning-system --agent claude-code
 ```
 
-Personal scope uses `$HOME/.claude/skills`. This integration intentionally uses regular copied files, not symlinks; the shared installer rejects symlinked paths. All copies derive from the canonical manifest, not a separate Claude-specific methodology. If the project also has `.agents/skills`, keep both installed bundles byte-identical and check both after updates. Other agents may discover both locations; avoid divergent duplicate definitions.
+Personal scope uses `$HOME/.claude/skills`; select `--global` when appropriate. The standard CLI supports canonical-copy/symlink installations and `--copy`; each package is self-contained in either mode. A single `to-docs` copy installation was exercised locally with the standard CLI, without launching Claude. The optional Python fallback still rejects symlinked destinations and conflicting files. Avoid divergent duplicate definitions in multiple discovery roots.
 
 Invoke `/init-study` or an independent `/feynman`, `/to-docs`, and so on. Claude can activate component skills through its native skill mechanism when their descriptions remain visible. Do not mark all components user-only, add broad tool grants, or assume that a root `AGENTS.md` alone installs these skills. Resolve higher-precedence managed/personal same-named skills before use. Start a fresh session if definitions do not appear; newer documentation also describes live reload, but no reload feature was exercised locally.
 
@@ -30,7 +28,7 @@ Request in ordinary language:
 Use the init-study skill to resume my selected study workspace.
 ```
 
-Do not promise a user-facing `/init-study` command. Gemini activates skills through `activate_skill` and prompts for native consent. Approval exposes that skill's body/directory, not necessarily all sibling reference contents: allow ordinary read access to `_study` if separately requested. If policy prevents reference access or component activation, stop with that limitation rather than treating a file read as a consent bypass. Pass study context in the conversation; do not invent extra arguments for the activation tool.
+Do not promise a user-facing `/init-study` command. Gemini activates skills through `activate_skill` and prompts for native consent. Each package's `references/` now lives inside that activated skill's directory, rather than a sibling `_study` folder. Still respect all read/write permission prompts; if policy prevents required access or activation, stop rather than bypass consent. Pass study context in the conversation; do not invent extra activation-tool arguments. Select `--agent gemini-cli` with the standard installer.
 
 The documentation site currently displays a notice that unpaid-tier/Google One users transitioned from Gemini CLI to Antigravity CLI on June 18, 2026. Verify the product/access available to your account against the [official notice](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli). This project still targets the documented Gemini CLI skill interface; it neither substitutes Antigravity nor claims that the same integration was checked there.
 
@@ -40,7 +38,7 @@ Sources: [Agent Skills](https://geminicli.com/docs/cli/skills/), [getting starte
 
 ## Cursor local Agent chat
 
-Install to the project's `.agents/skills` directory; `.cursor/skills` is another documented route. User-level `.agents/skills`/`.cursor/skills` are local-machine scope, not automatic cloud deployment.
+Select `--agent cursor` with the standard installer. Native project discovery includes `.agents/skills` and `.cursor/skills`. User-level `.agents/skills`/`.cursor/skills` are local-machine scope, not automatic cloud deployment.
 
 In Agent chat type `/`, select `init-study`, and provide the goal/workspace. The current documentation says a manually attached skill applies to one message. For session-persistent guidance, optionally use that skill as a Custom Mode with Option+Enter on macOS or Alt+Enter on Windows. On resume, explicitly select the skill again if needed; persisted workspace files, not attachment lifetime, retain progress. Components must remain available for Agent's description-based selection.
 
@@ -52,7 +50,7 @@ Source: [Cursor Agent Skills](https://cursor.com/docs/skills).
 
 ## Pi coding agent
 
-Install to the project's `.agents/skills`; Pi documents that portable discovery location and the user-level `$HOME/.agents/skills` alias. Use directories containing `SKILL.md`, not flattened standalone Markdown files, so the shared-reference layout is preserved.
+Select `--agent pi` with the standard installer. Pi documents project `.agents/skills` and the user-level `$HOME/.agents/skills` alias. Preserve the complete skill folder with `SKILL.md`, `references/`, and `LICENSE`, not a flattened Markdown file.
 
 Invoke `/skill:init-study` followed by your goal/workspace. Independent example: `/skill:to-docs Export topics t001 and t002 from my selected workspace.` Pi advertises descriptions and reads skill content on demand; explicit invocation forces loading when automatic selection misses it. Use `/reload` after editing definitions. Review project trust and grant file access only as needed; command availability is not authorization to execute arbitrary source instructions.
 

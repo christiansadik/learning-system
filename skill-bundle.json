@@ -1,6 +1,9 @@
 {
-  "format_version": 1,
-  "source_root": ".agents/skills",
+  "format_version": 2,
+  "source_root": "authoring/skills",
+  "reference_root": "authoring/references",
+  "distribution_root": "skills",
+  "license": "MIT",
   "skills": [
     "init-study",
     "to-map",
@@ -11,18 +14,16 @@
     "to-docs",
     "to-review"
   ],
-  "shared_directories": ["_study"],
-  "shared_files": [
-    "_study/LICENSE.md",
-    "_study/dialogue.md",
-    "_study/explanation.md",
-    "_study/exports.md",
-    "_study/flow.md",
-    "_study/migrations.md",
-    "_study/orientation-format.md",
-    "_study/practice.md",
-    "_study/review.md",
-    "_study/state.schema.json",
-    "_study/workspace.md"
+  "reference_files": [
+    "dialogue.md",
+    "explanation.md",
+    "exports.md",
+    "flow.md",
+    "migrations.md",
+    "orientation-format.md",
+    "practice.md",
+    "review.md",
+    "state.schema.json",
+    "workspace.md"
   ]
 }

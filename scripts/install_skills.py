@@ -2,78 +2,23 @@
 """Install the explicitly listed study bundle, without replacing user files."""
 
 import argparse
-import json
 from pathlib import Path
-import re
 import sys
 
-
-ROOT = Path(__file__).resolve().parent.parent
-
-
-def no_symlinks(path):
-    """Refuse redirected paths, including redirects in existing parents."""
-    for item in (path, *path.parents):
-        if item.is_symlink():
-            raise ValueError(f"Symlinked path is not a copy destination/source: {item}")
+# Keep preview/check from creating local bytecode files during this import.
+sys.dont_write_bytecode = True
+from build_skills import manifest_data, no_symlinks, package_files, project_path
 
 
 def bundle_files(selected):
-    manifest = json.loads((ROOT / "skill-bundle.json").read_text(encoding="utf-8"))
-    if manifest["format_version"] != 1:
-        raise ValueError("Unsupported bundle manifest version")
-    names = manifest["skills"]
-    if len(names) != len(set(names)):
-        raise ValueError("Duplicate skill names in manifest")
-    unknown = set(selected) - set(names)
-    if unknown:
-        raise ValueError(f"Unknown skills: {', '.join(sorted(unknown))}")
-    chosen = [name for name in names if not selected or name in selected]
-    directories = chosen + manifest["shared_directories"]
-    if any(not re.fullmatch(r"[a-z0-9_-]+", name) for name in directories):
-        raise ValueError("Unsafe directory name in manifest")
-    allowed_files = {Path(name) / "SKILL.md" for name in chosen}
-    for name in manifest["shared_files"]:
-        relative = Path(name)
-        if relative.is_absolute() or ".." in relative.parts or relative.parts[0] not in manifest["shared_directories"]:
-            raise ValueError(f"Unsafe shared file in manifest: {name}")
-        allowed_files.add(relative)
-    source = ROOT / manifest["source_root"]
-    if not source.resolve().is_relative_to(ROOT):
-        raise ValueError("Bundle source is outside this checkout")
-    no_symlinks(source)
-    files = {}
-    for name in directories:
-        folder = source / name
-        no_symlinks(folder)
-        if not folder.is_dir():
-            raise ValueError(f"Missing bundle directory: {name}")
-        if name in chosen and not (folder / "SKILL.md").is_file():
-            raise ValueError(f"Missing SKILL.md: {name}")
-        for path in sorted(folder.rglob("*")):
-            no_symlinks(path)
-            if path.is_file():
-                if path.relative_to(source) not in allowed_files:
-                    raise ValueError(f"Unlisted source file; review the manifest: {path.relative_to(source)}")
-                if path.suffix not in (".md", ".json"):
-                    raise ValueError(f"Unexpected bundle file: {path.relative_to(source)}")
-                files[path.relative_to(source)] = path.read_bytes()
-    if set(files) != allowed_files:
-        raise ValueError("A file listed in the bundle manifest is missing")
-    license_path = ROOT / "LICENSE"
-    no_symlinks(license_path)
-    if files.get(Path("_study/LICENSE.md")) != license_path.read_bytes():
-        raise ValueError("Bundled license must match the canonical root LICENSE")
-    for relative, content in files.items():
-        if relative.suffix == ".md":
-            for target in re.findall(r"\]\(([^)]+)\)", content.decode("utf-8")):
-                if "://" not in target:
-                    resolved = (source / relative.parent / target).resolve()
-                    if not resolved.is_relative_to(source.resolve()):
-                        raise ValueError(f"Reference escapes bundle: {relative}: {target}")
-                    if resolved.relative_to(source.resolve()) not in files:
-                        raise ValueError(f"Missing required reference: {relative}: {target}")
-    return chosen, directories, files
+    chosen, files = package_files(selected)
+    distribution = project_path(manifest_data()["distribution_root"])
+    for relative, expected in files.items():
+        path = distribution / relative
+        no_symlinks(path)
+        if not path.is_file() or path.read_bytes() != expected:
+            raise ValueError("Published packages are missing/stale; run build_skills.py --write first")
+    return chosen, chosen, files
 
 
 def inspect_destination(target, directories, files):
@@ -120,7 +65,7 @@ def main():
         chosen, directories, files = bundle_files(args.skill)
         missing = inspect_destination(target, directories, files)
         print(f"Target: {target}")
-        print(f"Skills: {', '.join(chosen)}; shared references included")
+        print(f"Skills: {', '.join(chosen)}; each includes references and license")
         if args.check:
             if missing:
                 raise ValueError(f"Incomplete installation: {len(missing)} files missing")

@@ -8,20 +8,23 @@ Give the agent a main topic and learning goal, then supply specific topics and m
 
 ## Quick start
 
-1. Download or clone [this repository](https://github.com/christiansadik/learning-system). Use an agent you already have installed and authorized; this project does not install agents or credentials.
-2. From this checkout, preview installation into your study project's skills directory, then explicitly apply it:
+1. Use an agent you already have installed and authorized. From your study project, install through the standard [Skills CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --apply
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --check
+npx skills add christiansadik/learning-system
 ```
 
-Requires **Python 3.9+** for installation. The skills themselves are instructions, not a Python learning application. Examples use Unix-style paths; adapt paths to your platform. Local observations were made on macOS.
+Choose all eight skills for the full flow, then choose your agent(s). The CLI uses project scope by default; add `--global` for personal scope. The current CLI requires **Node.js 22.20+**. End users do not need Python, an npm package from this project, or a custom installer. This project does not install agent applications or credentials.
 
-For **Claude Code**, use `/path/to/study-project/.claude/skills` instead. The same installer copies the same bundle and preserves sibling references. Do not copy only `SKILL.md`: `_study` is required.
+To select the full flow for one agent explicitly:
 
-3. Open your agent in the study project. For example, in OpenCode:
+```sh
+npx skills add christiansadik/learning-system --skill '*' --agent opencode
+```
+
+The repository shorthand downloads the published default branch (or an explicitly selected branch), not uncommitted local changes. During development, use `npx skills add /path/to/learning-system/skills --list` or install from that local path. Local installer observations are recorded separately from GitHub-download and learner-flow verification in the integration evidence.
+
+2. Open your agent in the study project. For example, in OpenCode:
 
 ```text
 @init-study
@@ -31,7 +34,7 @@ Workspace: /path/to/study-project/study.
 Language: English.
 ```
 
-4. When ready, supply a specific topic and your material. You do not need to prepare an entire course upfront:
+3. When ready, supply a specific topic and your material. You do not need to prepare an entire course upfront:
 
 ```text
 Specific topic: dependency injection.
@@ -52,32 +55,32 @@ The agent should ask only for missing information, preserve actual source proven
 | Cursor local Agent chat | `.agents/skills` | Select `init-study` from `/` | Documented; UI activation unverified |
 | Pi coding agent | `.agents/skills` | `/skill:init-study` | Documented; local execution unverified |
 
-These are **local filesystem routes**, not marketplace plugins or universal claims about cloud/editor variants. Gemini's documentation currently includes a product/account transition notice; this project does not silently substitute Antigravity. Cursor's manual skill attachment is message-scoped unless used as a Custom Mode.
+These are documented native filesystem routes; the standard installer selects an appropriate location for the requested agent. They are not universal claims about cloud/editor variants. Gemini's documentation currently includes a product/account transition notice; this project does not silently substitute Antigravity. Cursor's manual skill attachment is message-scoped unless used as a Custom Mode.
 
 Read [installation and updates](docs/integrations/install.md), [priority-agent details](docs/integrations/primary-agents.md), and [additional-agent details](docs/integrations/additional-agents.md) for permissions, refresh behavior, native loading, and limitations. Do not bypass a host's consent or grant blanket tool permissions to make a blocked step run.
 
 ### Install a single method
 
 ```sh
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --skill to-docs --apply
+npx skills add christiansadik/learning-system --skill to-docs
 ```
 
-Repeat `--skill` to select more methods. The installer includes all shared references, but not unrelated skills. A standalone method needs no predecessor skills; the full flow needs all eight skill directories. `_study` is a reference directory, not a ninth skill.
+Select additional skills/agents through the CLI options or interactive selection. Each installed skill is self-contained: `SKILL.md`, ten files in `references/`, and its own MIT `LICENSE`. A standalone method needs no predecessor skills or sibling `_study` folder; the full flow still needs all eight methods/controller directories.
 
-The default installer action is preview. Existing identical files are reused; conflicting content, symlinks, and unmanaged files inside selected directories stop installation without being replaced. See the installation guide before updating a modified bundle.
+Review existing skill customizations before replacing/updating installations. The third-party CLI has its own update, symlink/copy, and overwrite behavior; it does not inherit our conservative Python installer's no-overwrite policy. A Python fallback remains available from a checkout for explicit preview/apply/check operations. See [installation and migration](docs/integrations/install.md).
 
 ## The skills
 
 | Skill | Purpose |
 | --- | --- |
-| [`init-study`](.agents/skills/init-study/SKILL.md) | Initialize/resume the mission and coordinate the interactive full flow. |
-| [`to-map`](.agents/skills/to-map/SKILL.md) | Orient before study: key concepts, relationships, and guiding questions. |
-| [`to-drill`](.agents/skills/to-drill/SKILL.md) | Generate flashcards/quizzes and retain actual practice attempts. |
-| [`to-question`](.agents/skills/to-question/SKILL.md) | Explore your own why-questions, comparisons, and counterfactuals. |
-| [`socrate`](.agents/skills/socrate/SKILL.md) | Ask one question at a time, guiding errors and adapting difficulty. |
-| [`feynman`](.agents/skills/feynman/SKILL.md) | Evaluate your explanation, preserve revisions, and identify gaps. |
-| [`to-docs`](.agents/skills/to-docs/SKILL.md) | Export a concept map and self-contained explanation for one or more topics. |
-| [`to-review`](.agents/skills/to-review/SKILL.md) | Run cumulative delayed quizzes, report progress, and update due dates. |
+| [`init-study`](skills/init-study/SKILL.md) | Initialize/resume the mission and coordinate the interactive full flow. |
+| [`to-map`](skills/to-map/SKILL.md) | Orient before study: key concepts, relationships, and guiding questions. |
+| [`to-drill`](skills/to-drill/SKILL.md) | Generate flashcards/quizzes and retain actual practice attempts. |
+| [`to-question`](skills/to-question/SKILL.md) | Explore your own why-questions, comparisons, and counterfactuals. |
+| [`socrate`](skills/socrate/SKILL.md) | Ask one question at a time, guiding errors and adapting difficulty. |
+| [`feynman`](skills/feynman/SKILL.md) | Evaluate your explanation, preserve revisions, and identify gaps. |
+| [`to-docs`](skills/to-docs/SKILL.md) | Export a concept map and self-contained explanation for one or more topics. |
+| [`to-review`](skills/to-review/SKILL.md) | Run cumulative delayed quizzes, report progress, and update due dates. |
 
 ## How the main flow works
 
@@ -124,7 +127,7 @@ study/
 
 `state.json` is authoritative for topic/concept IDs, source scope, activities, learner contributions, attempts, exports, schedules, and navigation. Generated documents are not a second progress database. Original material may be referenced in place; copying it requires permission. Pasted source text is preserved separately from generated interpretation.
 
-The current shared contract is **1.6.0**. Supported older versions are read-only until you authorize their documented upgrade chain. Snapshots preserve previous state; they are recovery evidence, not competing current records. See the [workspace contract](.agents/skills/_study/workspace.md) and [migration rules](.agents/skills/_study/migrations.md).
+The current shared contract is **1.6.0**; this packaging change does not change learner-state format. Supported older versions are read-only until you authorize their documented upgrade chain. Snapshots preserve previous state; they are recovery evidence, not competing current records. See the canonical [workspace contract](authoring/references/workspace.md) and [migration rules](authoring/references/migrations.md).
 
 ### Pause and switch agents
 
@@ -162,7 +165,7 @@ The agent classifies fundamental concepts relative to your objective, with a rev
 | Already at the 30-day stage, at least 90%, no deeper-study flag | May extend to +60 days |
 | No unaided evaluated answers | Existing due date/stage unchanged |
 
-Intervals are configurable and changes are recorded. A strong aggregate does not postpone a fundamental gap. Reopening the workspace, repeating enrollment, generating documents, or abandoning a quiz does not reset due dates. See the [review contract](.agents/skills/_study/review.md) for exact rules.
+Intervals are configurable and changes are recorded. A strong aggregate does not postpone a fundamental gap. Reopening the workspace, repeating enrollment, generating documents, or abandoning a quiz does not reset due dates. See the [review contract](authoring/references/review.md) for exact rules.
 
 For material already studied outside this flow, standalone `to-review` can enroll a topic after your explicit confirmation and actual study-completion time. It records that attestation without inventing completed workflow steps, then reports the due date rather than immediately launching a cumulative quiz.
 
@@ -186,7 +189,15 @@ See [synthetic usage examples](docs/examples.md) for progressive study, resumpti
 
 ## Public distribution and development
 
-[`skill-bundle.json`](skill-bundle.json) lists the eight installable skills and eleven shared files, including the MIT notice. The installer copies only those 19 files and verifies that the bundled notice matches the canonical root `LICENSE`. It does not bundle preinstalled development skills, private learning workspaces, credentials, or unrelated agent configuration.
+[`skill-bundle.json`](skill-bundle.json) lists the canonical sources and ten shared contracts. Author templates in `authoring/skills/` and contracts in `authoring/references/`; generate the public `skills/<name>/` packages from that one source of truth:
+
+```sh
+python3 scripts/build_skills.py          # preview only
+python3 scripts/build_skills.py --write  # regenerate owned, unedited output
+python3 scripts/build_skills.py --check  # inspect reproducibility and local links
+```
+
+Generation requires Python 3.9+ for maintainers only. It produces eight self-contained packages (96 files), plus a root build receipt that is not part of any installed skill. Generated copies are committed for standard installers, not maintained separately by hand. The builder refuses edited/unrecognized outputs or obsolete paths rather than silently deleting user work. No learner data or unrelated local agent tooling belongs in these packages.
 
 The repository also contains public documentation and project-owned planning/review records. Before any public push, follow the [publication checklist](docs/PUBLICATION.md) and review the staged/tracked files. Creating commits does not authorize publishing a repository or pushing.
 
@@ -194,6 +205,6 @@ The repository also contains public documentation and project-owned planning/rev
 
 Inspired by the seven study methods in [this video](https://www.youtube.com/watch?v=nURLSE_0hnk), using a transcript supplied during design. The photography step was intentionally replaced with `to-docs`, because the intended learner already organizes source material. Podcast generation became source-grounded document export rather than a dependency on one media platform. Promotional speed claims are not guarantees of this project.
 
-**[MIT License](LICENSE).** You may use, modify, fork, redistribute, sublicense, and use this project's code and documentation commercially, provided you retain the copyright and permission notice in copies or substantial portions. Modified versions do not have to be open-sourced, and the software is supplied without warranty. Installed bundles include the notice in `_study/LICENSE.md`; keep it when sharing individual skills with their references.
+**[MIT License](LICENSE).** You may use, modify, fork, redistribute, sublicense, and use this project's code and documentation commercially, provided you retain the copyright and permission notice in copies or substantial portions. Modified versions do not have to be open-sourced, and the software is supplied without warranty. Each installed skill includes its own `LICENSE` copied from the canonical root notice; keep it when sharing the skill.
 
 Third-party agents and study sources retain their own terms; this license does not grant rights to learner-supplied books, videos, or other third-party material. Unrelated local development skills are not part of this deliverable.

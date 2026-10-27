@@ -1,56 +1,74 @@
-# Install the Study Bundle
+# Install with the Standard Skills CLI
 
-Requires Python 3.9 or newer. Run the installer from this repository's checkout. It installs skill definitions, not an agent application, credentials, models, or learning data.
-
-The canonical source is the allowlist in [`skill-bundle.json`](../../skill-bundle.json). `_study` is a required sibling reference directory, not a ninth skill. Do not install a lone `SKILL.md` or use a per-skill marketplace installer that drops sibling references. This release uses local filesystem installation, not marketplace/plugin packaging.
-
-The full bundle has 19 files, including `_study/LICENSE.md`; individual selections also include that MIT notice. The installer verifies that the notice matches the canonical repository `LICENSE`. Preserve it when redistributing installed skills. An older installation without the notice can add it without replacing already-identical files; the usual conflict protections still apply.
-
-## Project installation
-
-For the documented OpenCode V2, Codex CLI/IDE, and Copilot CLI routes, choose the study project's `.agents/skills` directory:
+Run from the project where you want to study, using Node.js 22.20+ with the current [Skills CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --apply
-python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --check
+npx skills add christiansadik/learning-system
 ```
 
-The first command previews; only `--apply` writes. Start the agent in that project and grant normal file access/trust for its study workspace and bundled references. Installation does not preapprove tools, bypass native activation consent, or edit host configuration.
+Select the desired skills and coding agents. Choose **all eight skills** for the complete flow, or just a method for standalone use. Each published skill contains `SKILL.md`, ten reference files, and `LICENSE`; there is no sibling-folder dependency or Python requirement for normal installation.
 
-## Personal installation
+The repository shorthand downloads the published repository, not your uncommitted local work. It requires the generated `skills/` packages to be committed and pushed first. Until that is authorized and done, use the local checkout route below. No GitHub-download installation of the new packaging is claimed yet.
 
-The same three documented agents accept a user-level `.agents/skills` location:
+## Common commands
 
 ```sh
-python3 scripts/install_skills.py --target "$HOME/.agents/skills" --apply
+# Inspect available skills without installing
+npx skills add christiansadik/learning-system --list
+
+# Full flow for OpenCode
+npx skills add christiansadik/learning-system --skill '*' --agent opencode
+
+# One self-contained skill for Claude Code
+npx skills add christiansadik/learning-system --skill to-docs --agent claude-code
+
+# Personal rather than project scope
+npx skills add christiansadik/learning-system --global
 ```
 
-Use project scope first to avoid shadowing skills across unrelated projects. Keep only intended versions visible: hosts resolve duplicate names differently. Personal skill installation does not put learner state in the home skills directory; explicitly select the same learning workspace when switching agents.
+The documented target IDs are `opencode`, `codex`, `github-copilot`, `claude-code`, `gemini-cli`, `cursor`, and `pi`. Select agents interactively or through `--agent`; installation does not install those agents or authenticate a provider. Native skill/file-access consent remains in force.
 
-## Other discovery roots
+Skills CLI defaults to canonical installation with agent-specific links where applicable; `--copy` requests ordinary copied files. References and the license remain inside each skill in either mode. This project's former no-overwrite Python policy is **not** a guarantee about the third-party CLI: inspect its prompts and back up skill customizations before replacement or update. Do not pass broad unattended flags to an unfamiliar destination merely to silence prompts.
 
-Gemini CLI, Cursor local Agent chat, and Pi also document `.agents/skills` for project use. Claude Code's local terminal route uses `.claude/skills`; pass that directory as `--target` to the same installer. It copies the same selected files and references, not an adapted teaching implementation. See [additional-agent guidance](additional-agents.md) for native invocation, trust, lifetime, and local/cloud limitations. This installer deliberately does not create symlink mappings or silently edit host settings.
-
-## One method or the whole flow
+## Local checkout and maintainer workflow
 
 ```sh
+npx skills add /path/to/learning-system/skills --list
+npx skills add /path/to/learning-system/skills --skill to-docs --agent claude-code
+```
+
+Use the explicit `skills` directory for local development so discovery does not pick up unrelated local `.agents/skills` tooling. Repository downloads include only tracked source/distribution files, not ignored local tools.
+
+Authoritative content lives in `authoring/skills/<name>.md` and `authoring/references/`; those templates are deliberately not named `SKILL.md`. The committed `skills/<name>/` packages are generated from [`skill-bundle.json`](../../skill-bundle.json):
+
+```sh
+python3 scripts/build_skills.py          # preview
+python3 scripts/build_skills.py --write  # regenerate
+python3 scripts/build_skills.py --check  # read-only reproducibility/link check
+```
+
+Maintainer generation requires Python 3.9+. Every package is self-contained; the generated build receipt records prior file hashes to protect hand-edited output. Changed/unknown files, symlinks, or obsolete generated paths require explicit review rather than automatic deletion. Per-file writes are atomic where supported, but a build is not a concurrent-writer/security boundary or a whole-directory transaction. Preserve and inspect partial artifacts after an interrupted build.
+
+## Conservative Python fallback
+
+For an explicit copy destination and no-overwrite behavior, run from a full checkout:
+
+```sh
+python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --skill to-docs
 python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --skill to-docs --apply
+python3 scripts/install_skills.py --target /path/to/study-project/.agents/skills --skill to-docs --check
 ```
 
-Repeat `--skill` to select multiple methods. All shared references are included because they reference each other. Independent methods do not require predecessor skills, but `init-study` needs all seven component methods for the complete flow. Missing methods must remain visible blockers, never simulated successes.
+Omit `--skill` for all eight packages; repeat it for a selection. Use `.claude/skills` for the manual Claude Code route. This fallback validates the published packages against canonical sources, includes the internal references/license, and refuses differing existing files, symlinked paths, or unknown files inside selected directories. Preview does not write. Exclusive creation protects existing files; an interrupted copy may require explicit preservation/recovery. It never silently removes an old `_study` folder or unrelated installed skills.
 
-## Preservation, updates, and interruptions
+## Upgrading from the old sibling-reference layout
 
-- The installer only considers explicitly listed skill directories and `_study`; unrelated directories/configuration remain untouched.
-- Existing identical files are reused. Different content, symlinks, unexpected files inside managed directories, or unsafe destinations stop installation before copying. There is no force-overwrite option.
-- To update, preview and inspect differences first. Preserve your modified/old bundle separately, then explicitly choose a clean installation location or move only the old managed directories after review. Do not mix shared-reference versions or broadly delete a skills directory.
-- Exclusive file creation avoids overwriting files that appear after preflight. Installation is not a filesystem transaction or hardened concurrent-writer boundary. If interrupted, inspect partial files; rerunning fills missing files only when existing bytes match. A partial/different file requires explicit preservation/recovery, not automatic deletion.
-- `--check` verifies selected installed bytes and local references, not agent activation or study behavior. A matching installation is not an end-to-end compatibility result.
-- Copying references outside each individual skill folder requires ordinary read permission on `_study`. Hosts do not necessarily attach supporting file contents automatically.
+The old layout used a shared `_study` folder next to skills. The new packages put resources in each skill's `references/` and `LICENSE`. Back up any custom skill changes before replacing only the selected old skill directories. Do not delete the whole agent skills directory, other local tools, or your learning workspace. Leave an old `_study` folder untouched unless you explicitly confirm it is no longer needed.
 
-## Switching agents
+This changes packaging only: learner state remains at contract 1.6.0 in the same explicitly selected workspace. There is no need to move sources, answers, due dates, or snapshots into the installed skill folder.
 
-Finish the current file save, close or pause the first agent, and start the next against the same project and explicit workspace root. Invoke `init-study` using that host's syntax and ask to resume that workspace. Its persisted topic IDs, source records, prompts, answers, schedules, and navigation are authoritative; chat history is not required. Sequential switching is intended; concurrent writers are not supported.
+## Switching agents and assurance
 
-Do not copy a real workspace into the public skill bundle. Keep the default `study/` excluded and follow custom-workspace privacy checks.
+Finish the current save and pause the first agent, then invoke `init-study` in the next agent against the same project and explicit learning workspace. Persistent topic IDs, prompts, answers, schedules, and navigation—not chat history—are authoritative. Use agents sequentially; concurrent writers are unsupported. See [per-agent guidance](additional-agents.md) and [evidence](evidence.md).
+
+Local CLI discovery/full-copy and single-skill-copy installation were exercised with Skills 1.7.4. These are packaging observations, not proof of actual teaching, state migration, or cross-agent learner handoff. No agent applications, credentials, model requests, learner data, or automated test suite were created. Keep private `study/` data out of public packages.

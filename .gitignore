@@ -2,16 +2,12 @@
 /study/
 
 # Local agent tooling is not part of the public study bundle.
-/.agents/skills/*
-!/.agents/skills/init-study/
-!/.agents/skills/to-map/
-!/.agents/skills/to-drill/
-!/.agents/skills/to-question/
-!/.agents/skills/socrate/
-!/.agents/skills/feynman/
-!/.agents/skills/to-docs/
-!/.agents/skills/to-review/
-!/.agents/skills/_study/
+/.agents/skills/
+/.claude/skills/
+/.opencode/skills/
+/.github/skills/
+/.gemini/skills/
+/.cursor/skills/
 /skills-lock.json
 
 # Credentials, local caches, and generated distribution files.

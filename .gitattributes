@@ -1,0 +1,6 @@
+# Keep canonical bytes and generated receipts stable across checkouts.
+authoring/** text eol=lf
+skills/** text eol=lf
+scripts/*.py text eol=lf
+skill-bundle.json text eol=lf
+LICENSE text eol=lf
