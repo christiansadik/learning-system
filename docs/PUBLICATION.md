@@ -1,12 +1,12 @@
 # Public Distribution Checklist
 
-This project is prepared for a future public repository; this checklist does not authorize a remote, upload, push, release, or choice of license.
+The repository destination is [christiansadik/learning-system](https://github.com/christiansadik/learning-system), and the project is licensed under [MIT](../LICENSE). This checklist does not authorize an upload, push, or release.
 
 ## Distribution boundaries
 
 | Content | Intended scope |
 | --- | --- |
-| Eight skill definitions and ten shared reference files in `skill-bundle.json` | Installable product; exactly 18 files |
+| Eight skill definitions and eleven shared files in `skill-bundle.json` | Installable product; exactly 19 files, including the MIT notice |
 | Installer, manifest, English README, integration/evidence/examples documentation | Public project support |
 | Project-owned `AGENTS.md`, glossary, agent conventions, spec/tickets/review records | Development documentation, reviewed separately from the installable product |
 | Other preinstalled `.agents/skills` folders and `skills-lock.json` | Local tooling; excluded, not redistributed |
@@ -24,13 +24,13 @@ The installer uses exact file allowlists and rejects unexpected files inside man
 5. For custom workspaces, verify effective exclusion and whether any files were already tracked. Stop and ask before untracking, removing, or rewriting existing user work.
 6. Run the installer's read-only `--check` against an intended installation. This checks copied bytes/references, not behavioral compatibility, licensing, or secrets.
 7. Review [integration evidence](integrations/evidence.md). Keep native loader observations, filesystem checks, documentation-only routes, and actual learner execution distinct. Real cross-agent handoff is still unverified.
-8. Choose and approve a license before presenting this as a licensed open-source release. No license file or third-party redistribution rights are assumed here.
+8. Retain the MIT copyright/permission notice, including `_study/LICENSE.md` in installed bundles. The root `LICENSE` is canonical and the installer verifies its bundled copy. This does not grant third-party redistribution rights.
 9. Request explicit approval before creating a GitHub repository/remote, pushing, uploading an archive, or publishing a release. Commits alone are not publication permission.
 
-## Publication blockers still requiring owner decisions
+## Publication status and remaining checks
 
-- **License:** not selected; repository visibility does not grant a permissive license.
-- **Destination/publication:** GitHub repository and remote have not been created by this workflow.
+- **License:** MIT selected with the owner's delegated approval; retain its notice in copies or substantial portions.
+- **Destination/publication:** the owner created the GitHub repository and supplied its URL. Local `origin` points to that repository; pushing and release publication still require explicit approval.
 - **Compatibility assurance:** real learner sessions and sequential cross-agent handoff remain unverified. Publish the current limitation, not a claim that all seven agents have passed an end-to-end check.
 
 ## Maintenance

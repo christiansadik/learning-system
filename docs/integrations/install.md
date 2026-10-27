@@ -4,6 +4,8 @@ Requires Python 3.9 or newer. Run the installer from this repository's checkout.
 
 The canonical source is the allowlist in [`skill-bundle.json`](../../skill-bundle.json). `_study` is a required sibling reference directory, not a ninth skill. Do not install a lone `SKILL.md` or use a per-skill marketplace installer that drops sibling references. This release uses local filesystem installation, not marketplace/plugin packaging.
 
+The full bundle has 19 files, including `_study/LICENSE.md`; individual selections also include that MIT notice. The installer verifies that the notice matches the canonical repository `LICENSE`. Preserve it when redistributing installed skills. An older installation without the notice can add it without replacing already-identical files; the usual conflict protections still apply.
+
 ## Project installation
 
 For the documented OpenCode V2, Codex CLI/IDE, and Copilot CLI routes, choose the study project's `.agents/skills` directory:

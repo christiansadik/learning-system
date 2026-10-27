@@ -4,11 +4,11 @@ A source-grounded, stateful study workflow for AI agents: **seven independent st
 
 Give the agent a main topic and learning goal, then supply specific topics and materials as you progress. The agent organizes practice, asks questions, evaluates your explanations, prepares reusable documents, and schedules cumulative reviews. **You do the retrieval and reasoning; the agent does not learn on your behalf.**
 
-> Status: instruction-based workflow with a versioned shared-state contract. Installation and limited discovery have been inspected; real learner sessions and cross-agent handoffs have **not** been verified. See [integration evidence](docs/integrations/evidence.md). No open-source license has been selected yet.
+> Status: instruction-based workflow with a versioned shared-state contract, licensed under [MIT](LICENSE). Installation and limited discovery have been inspected; real learner sessions and cross-agent handoffs have **not** been verified. See [integration evidence](docs/integrations/evidence.md).
 
 ## Quick start
 
-1. Download or clone this repository. Use an agent you already have installed and authorized; this project does not install agents or credentials.
+1. Download or clone [this repository](https://github.com/christiansadik/learning-system). Use an agent you already have installed and authorized; this project does not install agents or credentials.
 2. From this checkout, preview installation into your study project's skills directory, then explicitly apply it:
 
 ```sh
@@ -186,12 +186,14 @@ See [synthetic usage examples](docs/examples.md) for progressive study, resumpti
 
 ## Public distribution and development
 
-[`skill-bundle.json`](skill-bundle.json) lists the eight installable skills and ten shared files. The installer copies only those 18 files. It does not bundle preinstalled development skills, private learning workspaces, credentials, or unrelated agent configuration.
+[`skill-bundle.json`](skill-bundle.json) lists the eight installable skills and eleven shared files, including the MIT notice. The installer copies only those 19 files and verifies that the bundled notice matches the canonical root `LICENSE`. It does not bundle preinstalled development skills, private learning workspaces, credentials, or unrelated agent configuration.
 
-The repository also contains public documentation and project-owned planning/review records. Before any public push, follow the [publication checklist](docs/PUBLICATION.md), review the staged/tracked files, and choose a license. Creating commits does not authorize creating a remote, publishing a repository, or pushing.
+The repository also contains public documentation and project-owned planning/review records. Before any public push, follow the [publication checklist](docs/PUBLICATION.md) and review the staged/tracked files. Creating commits does not authorize publishing a repository or pushing.
 
 ## Inspiration and licensing
 
 Inspired by the seven study methods in [this video](https://www.youtube.com/watch?v=nURLSE_0hnk), using a transcript supplied during design. The photography step was intentionally replaced with `to-docs`, because the intended learner already organizes source material. Podcast generation became source-grounded document export rather than a dependency on one media platform. Promotional speed claims are not guarantees of this project.
 
-**License: pending maintainer decision.** No permissive/open-source license has been assigned. Do not assume reuse or redistribution rights merely because a repository becomes public. Third-party agents and study sources retain their own terms; unrelated local development skills are not part of this deliverable.
+**[MIT License](LICENSE).** You may use, modify, fork, redistribute, sublicense, and use this project's code and documentation commercially, provided you retain the copyright and permission notice in copies or substantial portions. Modified versions do not have to be open-sourced, and the software is supplied without warranty. Installed bundles include the notice in `_study/LICENSE.md`; keep it when sharing individual skills with their references.
+
+Third-party agents and study sources retain their own terms; this license does not grant rights to learner-supplied books, videos, or other third-party material. Unrelated local development skills are not part of this deliverable.

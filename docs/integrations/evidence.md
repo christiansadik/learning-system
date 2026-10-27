@@ -21,6 +21,10 @@ Observed on 2026-10-26, macOS. This page is the authority for local verification
 - The same installer copied and checked 18 files in a separate fresh `.claude/skills` layout, and an independent `to-docs` selection retained its 11 required files. These are filesystem/reference observations, not native Claude activation.
 - No agent application was installed or updated. No model prompt, authentication flow, learner source, learning record, test suite, or scheduled/background task was created.
 
+## License packaging update — 2026-10-27
+
+MIT licensing was added after the initial observations above. The current allowlist contains 19 files, including `_study/LICENSE.md`, rather than the original 18. The installer verifies that the bundled notice matches the canonical root `LICENSE`; its read-only check matched all 19 current source bundle files. The earlier 18-file and 11-file copy observations remain historical, not claims about the new file count. No additional agent activation or learner behavior was exercised for this licensing update.
+
 ## Known verification gaps
 
 The shared state contract is designed for sequential switching, but real learner-state handoff has not been demonstrated. An executable on PATH, parsed skill metadata, or matching copied files is not proof of agent interpretation, permission handling, persistence, scoring, or recovery. Unavailable agents/credentials must remain gaps rather than recorded successes.

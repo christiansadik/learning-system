@@ -60,6 +60,10 @@ def bundle_files(selected):
                 files[path.relative_to(source)] = path.read_bytes()
     if set(files) != allowed_files:
         raise ValueError("A file listed in the bundle manifest is missing")
+    license_path = ROOT / "LICENSE"
+    no_symlinks(license_path)
+    if files.get(Path("_study/LICENSE.md")) != license_path.read_bytes():
+        raise ValueError("Bundled license must match the canonical root LICENSE")
     for relative, content in files.items():
         if relative.suffix == ".md":
             for target in re.findall(r"\]\(([^)]+)\)", content.decode("utf-8")):

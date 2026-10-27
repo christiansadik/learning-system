@@ -13,6 +13,7 @@
   ],
   "shared_directories": ["_study"],
   "shared_files": [
+    "_study/LICENSE.md",
     "_study/dialogue.md",
     "_study/explanation.md",
     "_study/exports.md",
