@@ -34,7 +34,11 @@ MIT licensing was added after the initial observations above. At that stage the 
 - Default installation of `to-docs` accepted all seven documented target-agent IDs. Its canonical package matched all 12 files and the created agent link resolved to that package. Shared canonical locations mean this did not create seven separate directory copies.
 - Inspections used disposable local projects, not learner workspaces. Telemetry was disabled; no agent application, model session, login, automated test suite, commit, or push was launched by these packaging checks.
 
-These observations exercise the standard installer, not native teaching or handoff. The repository-shorthand GitHub download remains unverified until the new generated packages are committed and published. Earlier native-loader observations are historical and have not been repeated for this new packaging.
+These observations exercise the standard installer, not native teaching or handoff. At initial local inspection, the new packages had not yet been published; the subsequent GitHub discovery check is recorded below. Earlier native-loader observations are historical and have not been repeated for this new packaging.
+
+## Published repository discovery — 2026-10-27
+
+After the owner authorized commit/push, packaging commit `545c2d7` was published to `master`. The remote default branch resolved to that same commit. In a separate disposable directory, Skills CLI 1.7.4 successfully downloaded `christiansadik/learning-system` through the repository shorthand and reported exactly eight available skills. No installation into a real learner project or agent model session was launched by this discovery check. Remote download/discovery is verified; teaching behavior and cross-device learner-state handoff remain unverified.
 
 ## Known verification gaps
 

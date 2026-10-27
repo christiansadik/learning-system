@@ -35,7 +35,11 @@ No actionable findings. Generated duplication is controlled by one canonical aut
 
 The initial review identified a local-import bytecode side effect contradicting read-only preview/check claims. The fallback now disables bytecode generation before importing the generator. Fresh-checkout preview/check inspection created neither local bytecode nor installation files, and the final follow-up found no residual actionable issues. Learner-state schema bytes match the baseline exactly.
 
-Summary: Standards 0 findings; Spec 0 residual findings after one minor correction. Learner behavior, handoff, and GitHub download remain unverified. No commit or push was authorized or performed for this packaging change.
+Summary at implementation completion: Standards 0 findings; Spec 0 residual findings after one minor correction. Learner behavior, handoff, and GitHub download were then unverified; commit/push had not yet been authorized.
+
+## Subsequent authorized publication
+
+The owner later requested commit/push. Packaging commit `545c2d7` was pushed to `origin/master`, and the remote default branch resolved to it. HTTPS push lacked credentials, so the existing SSH authentication for the same owner/repository was used through a per-command URL rewrite; the stored HTTPS origin URL was left unchanged. Skills CLI 1.7.4 subsequently downloaded the published repository shorthand and found exactly eight skills. Actual teaching and cross-device handoff remain for separate learner verification; no model session or automated test suite was run.
 
 ## Sources
 
